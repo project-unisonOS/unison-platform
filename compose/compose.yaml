@@ -1,0 +1,515 @@
+# Unison Platform - Complete Service Stack
+# This compose file defines the runtime topology for all Unison services
+version: '3.8'
+
+services:
+  # Infrastructure Services
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: unison
+      POSTGRES_USER: unison
+      POSTGRES_PASSWORD: unison_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unison -d unison"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  nats:
+    image: nats:2.10-alpine
+    restart: unless-stopped
+    ports:
+      - "4222:4222"
+      - "8222:8222"  # HTTP monitoring
+    command: ["--jetstream", "--store_dir", "/data", "--http_port", "8222"]
+    volumes:
+      - nats_data:/data
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8222/varz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  # Core Services
+  auth:
+    image: ghcr.io/project-unisonos/unison-auth:main
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-auth
+      SERVICE_PORT: 8083
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+    volumes:
+      - auth_keys:/keys
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  context:
+    image: ghcr.io/project-unisonos/unison-context:main
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-context
+      SERVICE_PORT: 8081
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      AUTH_URL: http://auth:8083
+    volumes:
+      - context_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  policy:
+    image: ghcr.io/project-unisonos/unison-policy:main
+    restart: unless-stopped
+    ports:
+      - "8083:8083"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-policy
+      SERVICE_PORT: 8083
+      POSTGRES_HOST: postgres
+      REDIS_HOST: redis
+      AUTH_URL: http://auth:8083
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  orchestrator:
+    image: ghcr.io/project-unisonos/unison-orchestrator:main
+    restart: unless-stopped
+    ports:
+      - "8090:8080"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-orchestrator
+      SERVICE_PORT: 8080
+      CONTEXT_URL: http://context:8081
+      POLICY_URL: http://policy:8083
+      AUTH_URL: http://auth:8083
+      REDIS_HOST: redis
+      NATS_HOST: nats
+      INTENT_GRAPH_URL: http://intent-graph:8080
+      CONTEXT_GRAPH_URL: http://context-graph:8081
+    depends_on:
+      context:
+        condition: service_healthy
+      policy:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_healthy
+      intent-graph:
+        condition: service_healthy
+      context-graph:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  # Intent Orchestration Services
+  intent-graph:
+    image: ghcr.io/project-unisonos/unison-intent-graph:main
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-intent-graph
+      SERVICE_PORT: 8080
+      REDIS_HOST: redis
+      POSTGRES_HOST: postgres
+      CONTEXT_GRAPH_URL: http://context-graph:8081
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  context-graph:
+    image: ghcr.io/project-unisonos/unison-context-graph:main
+    restart: unless-stopped
+    ports:
+      - "8091:8081"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-context-graph
+      SERVICE_PORT: 8081
+      REDIS_HOST: redis
+      POSTGRES_HOST: postgres
+      INTENT_GRAPH_URL: http://intent-graph:8080
+    depends_on:
+      redis:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      intent-graph:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  experience-renderer:
+    image: ghcr.io/project-unisonos/unison-experience-renderer:main
+    restart: unless-stopped
+    ports:
+      - "8092:8082"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-experience-renderer
+      SERVICE_PORT: 8082
+      INTENT_GRAPH_URL: http://intent-graph:8080
+      CONTEXT_GRAPH_URL: http://context-graph:8081
+      ORCHESTRATOR_URL: http://orchestrator:8080
+      REDIS_HOST: redis
+    depends_on:
+      intent-graph:
+        condition: service_healthy
+      context-graph:
+        condition: service_healthy
+      orchestrator:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  agent-vdi:
+    image: ghcr.io/project-unisonos/unison-agent-vdi:main
+    restart: unless-stopped
+    ports:
+      - "8093:8083"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-agent-vdi
+      SERVICE_PORT: 8083
+      INTENT_GRAPH_URL: http://intent-graph:8080
+      EXPERIENCE_RENDERER_URL: http://experience-renderer:8082
+      REDIS_HOST: redis
+      DISPLAY: :100
+      XDG_RUNTIME_DIR: /tmp
+    depends_on:
+      intent-graph:
+        condition: service_healthy
+      experience-renderer:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    security_opt:
+      - no-new-privileges:true
+    cap_add:
+      - SYS_ADMIN
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  # I/O Services
+  io-speech:
+    image: ghcr.io/project-unisonos/unison-io-speech:main
+    restart: unless-stopped
+    ports:
+      - "8084:8084"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-io-speech
+      SERVICE_PORT: 8084
+      NATS_HOST: nats
+      AUTH_URL: http://auth:8083
+    depends_on:
+      nats:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8084/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  io-vision:
+    image: ghcr.io/project-unisonos/unison-io-vision:main
+    restart: unless-stopped
+    ports:
+      - "8086:8086"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-io-vision
+      SERVICE_PORT: 8086
+      NATS_HOST: nats
+      AUTH_URL: http://auth:8083
+    depends_on:
+      nats:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8086/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  io-core:
+    image: ghcr.io/project-unisonos/unison-io-core:main
+    restart: unless-stopped
+    ports:
+      - "8085:8085"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-io-core
+      SERVICE_PORT: 8085
+      NATS_HOST: nats
+      AUTH_URL: http://auth:8083
+      SPEECH_URL: http://io-speech:8084
+      VISION_URL: http://io-vision:8086
+    depends_on:
+      nats:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+      io-speech:
+        condition: service_healthy
+      io-vision:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8085/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  # Inference Services
+  inference:
+    image: ghcr.io/project-unisonos/unison-inference:main
+    restart: unless-stopped
+    ports:
+      - "8087:8087"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-inference
+      SERVICE_PORT: 8087
+      NATS_HOST: nats
+      AUTH_URL: http://auth:8083
+      UNISON_INFERENCE_PROVIDER: "ollama"
+      UNISON_INFERENCE_MODEL: "llama3.2"
+    depends_on:
+      nats:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8087/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  # Infrastructure Services
+  storage:
+    image: ghcr.io/project-unisonos/unison-storage:main
+    restart: unless-stopped
+    ports:
+      - "8082:8082"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-storage
+      SERVICE_PORT: 8082
+      POSTGRES_HOST: postgres
+      AUTH_URL: http://auth:8083
+    volumes:
+      - storage_data:/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8082/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  # Observability Stack (Optional - enabled with observability profile)
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    restart: unless-stopped
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # HTTP collector
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    profiles:
+      - observability
+    networks:
+      - unison-network
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+    profiles:
+      - observability
+    networks:
+      - unison-network
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    profiles:
+      - observability
+    networks:
+      - unison-network
+
+volumes:
+  redis_data:
+    driver: local
+  postgres_data:
+    driver: local
+  nats_data:
+    driver: local
+  auth_keys:
+    driver: local
+  context_data:
+    driver: local
+  storage_data:
+    driver: local
+  prometheus_data:
+    driver: local
+  grafana_data:
+    driver: local
+
+networks:
+  unison-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
