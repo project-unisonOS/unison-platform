@@ -1,0 +1,258 @@
+version: '3.8'
+
+services:
+  # Database Layer
+  postgres:
+    image: postgres:16-alpine@sha256:186baf93c7429eaffee5c5cdb519a4174d5e5b877cd3a4176146fd692b9d0f66
+    environment:
+      POSTGRES_DB: unison_identity
+      POSTGRES_USER: unison
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    secrets:
+      - db_password
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U unison"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - unison-internal
+
+  redis:
+    image: redis:7-alpine@sha256:9fa1a0a5177e3b9c75a9f8d0d4d5a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2a3
+    command: redis-server --requirepass-file /run/secrets/redis_password
+    secrets:
+      - redis_password
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-internal
+
+  # Identity Services
+  vault:
+    image: hashicorp/vault:1.16.0@sha256:8b0c6bd5b7b5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5d5
+    cap_drop: [ALL]
+    cap_add: [IPC_LOCK]
+    read_only: true
+    environment:
+      VAULT_ADDR: "https://vault.unisonos.org:8200"
+      VAULT_LOCAL_CONFIG: |
+        storage "postgresql" {
+          connection_url = "postgresql://{{.Env.DB_USER}}:{{.Env.DB_PASS}}@postgres:5432/{{.Env.DB_NAME}}?sslmode=disable"
+        }
+        listener "tcp" {
+          address = "0.0.0.0:8200"
+          tls_cert_file = "/vault/tls/tls.crt"
+          tls_key_file = "/vault/tls/tls.key"
+        }
+        api_addr = "https://vault.unisonos.org:8200"
+        cluster_addr = "https://vault.unisonos.org:8201"
+        ui = true
+        disable_mlock = true
+    ports:
+      - "8200:8200"
+    volumes:
+      - vault_tls:/vault/tls
+      - vault_data:/vault/file
+      - ./config/vault:/vault/config:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "vault", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-internal
+      - unison-external
+
+  unison-identity:
+    image: ghcr.io/project-unisonos/unison-identity:latest@sha256:jkl0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    cap_drop: [ALL]
+    read_only: true
+    environment:
+      - DATABASE_URL=postgresql://unison:${DB_PASSWORD}@postgres:5432/unison_identity
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN}
+      - JWT_SIGNING_KEY=${JWT_SIGNING_KEY}
+      - LOG_LEVEL=info
+      - SERVICE_PORT=8095
+    env_file:
+      - .env.identity
+    secrets:
+      - db_password
+      - vault_token
+      - jwt_signing_key
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8095/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-internal
+      - unison-external
+
+  unison-consent:
+    image: ghcr.io/project-unisonos/unison-consent:latest@sha256:mno3456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    cap_drop: [ALL]
+    read_only: true
+    environment:
+      - DATABASE_URL=postgresql://unison:${DB_PASSWORD}@postgres:5432/unison_identity
+      - POLICY_ENGINE_URL=http://policy-service:8083
+      - NOTIFICATION_SERVICE_URL=http://notification-service:8084
+      - SERVICE_PORT=8096
+      - LOG_LEVEL=info
+    env_file:
+      - .env.consent
+    secrets:
+      - db_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8096/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-internal
+      - unison-external
+
+  unison-connector-broker:
+    image: ghcr.io/project-unisonos/unison-connector-broker:latest@sha256:pqr6789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    cap_drop: [ALL]
+    read_only: true
+    environment:
+      - DATABASE_URL=postgresql://unison:${DB_PASSWORD}@postgres:5432/unison_identity
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN}
+      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379
+      - CONSENT_SERVICE_URL=http://unison-consent:8096
+      - MCP_PROXY_URL=http://unison-mcp-proxy:8098
+      - SERVICE_PORT=8097
+      - LOG_LEVEL=info
+    env_file:
+      - .env.connector
+    secrets:
+      - db_password
+      - vault_token
+      - redis_password
+    depends_on:
+      postgres:
+        condition: service_healthy
+      vault:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      unison-consent:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8097/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-internal
+      - unison-external
+
+  unison-mcp-proxy:
+    image: ghcr.io/project-unisonos/unison-mcp-proxy:latest@sha256:stu90123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    cap_drop: [ALL]
+    read_only: true
+    environment:
+      - VAULT_ADDR=http://vault:8200
+      - VAULT_TOKEN=${VAULT_TOKEN}
+      - CONSENT_SERVICE_URL=http://unison-consent:8096
+      - CONNECTOR_BROKER_URL=http://unison-connector-broker:8097
+      - SERVICE_PORT=8098
+      - LOG_LEVEL=info
+    secrets:
+      - vault_token
+    depends_on:
+      vault:
+        condition: service_healthy
+      unison-consent:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8098/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-internal
+      - unison-external
+
+  # Reverse Proxy
+  nginx:
+    image: nginx:alpine@sha256:123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
+    cap_drop: [ALL]
+    read_only: true
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx:/etc/nginx/conf.d:ro
+      - ./certs:/etc/nginx/certs:ro
+    depends_on:
+      - unison-identity
+      - unison-consent
+      - unison-connector-broker
+      - unison-mcp-proxy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-external
+
+volumes:
+  postgres_data:
+    driver: local
+  vault_data:
+    driver: local
+  vault_tls:
+    driver: local
+
+secrets:
+  db_password:
+    file: ./secrets/db_password.txt
+  redis_password:
+    file: ./secrets/redis_password.txt
+  vault_token:
+    file: ./secrets/vault_token.txt
+  jwt_signing_key:
+    file: ./secrets/jwt_signing_key.txt
+
+networks:
+  unison-internal:
+    driver: bridge
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+  unison-external:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.21.0.0/16

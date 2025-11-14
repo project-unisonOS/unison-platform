@@ -5,7 +5,7 @@ Defines the universal event schema and event types that all
 Unison services must use for communication.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Dict, Any, Optional, List
 from pydantic import BaseModel, Field, validator
@@ -77,6 +77,10 @@ class EventPriority(str, Enum):
     URGENT = "urgent"
 
 
+def now_utc() -> datetime:
+    return datetime.now(timezone.utc)
+
+
 class EventEnvelope(BaseModel):
     """
     Universal event envelope for all Unison service communication.
@@ -99,7 +103,7 @@ class EventEnvelope(BaseModel):
         description="Event schema version"
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=now_utc,
         description="Event creation timestamp"
     )
     
@@ -220,7 +224,7 @@ class EventEnvelope(BaseModel):
         if self.ttl is None:
             return False
         
-        elapsed = (datetime.utcnow() - self.timestamp).total_seconds()
+        elapsed = (now_utc() - self.timestamp).total_seconds()
         return elapsed > self.ttl
     
     def to_routing_key(self) -> str:

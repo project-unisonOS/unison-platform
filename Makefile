@@ -1,4 +1,4 @@
-# Unison Platform - Developer Experience Makefile
+﻿# Unison Platform - Developer Experience Makefile
 # Provides one-command orchestration for the entire Unison stack
 
 .PHONY: help up down logs test-int pin clean status observability dev prod
@@ -20,189 +20,189 @@ help: ## Show this help message
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "$(GREEN)%-20s$(RESET) %s\n", $$1, $$2}'
 
 up: ## Start the Unison stack
-	@echo "$(BLUE)🚀 Starting Unison platform ($(ENV))...$(RESET)"
+	@echo "$(BLUE)Starting Unison platform ($(ENV))...$(RESET)"
 	@mkdir -p logs
 	@docker compose --profile $(PROFILE) up -d --wait
-	@echo "$(GREEN)✅ Stack is ready!$(RESET)"
-	@echo "$(YELLOW)📋 Service Endpoints:$(RESET)"
-	@echo "   • Orchestrator:     http://localhost:8090/health"
-	@echo "   • Intent Graph:     http://localhost:8080/health"
-	@echo "   • Context Graph:    http://localhost:8091/health"
-	@echo "   • Experience Rendr: http://localhost:8092/health"
-	@echo "   • Agent VDI:        http://localhost:8093/health"
-	@echo "   • Auth Service:     http://localhost:8083/health"
-	@echo "   • Context Service:  http://localhost:8081/health"
-	@echo "   • Policy Service:   http://localhost:8083/health"
-	@echo "   • I/O Speech:       http://localhost:8084/health"
-	@echo "   • I/O Vision:       http://localhost:8086/health"
-	@echo "   • I/O Core:         http://localhost:8085/health"
-	@echo "   • Inference:        http://localhost:8087/health"
-	@echo "   • Storage:          http://localhost:8082/health"
+	@echo "$(GREEN)Stack is ready!$(RESET)"
+	@echo "$(YELLOW)Service Endpoints:$(RESET)"
+	@echo "   - Orchestrator:     http://localhost:8090/health"
+	@echo "   - Intent Graph:     http://localhost:8080/health"
+	@echo "   - Context Graph:    http://localhost:8091/health"
+	@echo "   - Experience Rendr: http://localhost:8092/health"
+	@echo "   - Agent VDI:        http://localhost:8093/health"
+	@echo "   - Auth Service:     http://localhost:8083/health"
+	@echo "   - Context Service:  http://localhost:8081/health"
+	@echo "   - Policy Service:   http://localhost:8083/health"
+	@echo "   - I/O Speech:       http://localhost:8084/health"
+	@echo "   - I/O Vision:       http://localhost:8086/health"
+	@echo "   - I/O Core:         http://localhost:8085/health"
+	@echo "   - Inference:        http://localhost:8087/health"
+	@echo "   - Storage:          http://localhost:8082/health"
 	@if [ "$(PROFILE)" = "observability" ]; then \
-		echo "$(YELLOW)📊 Observability:$(RESET)"; \
-		echo "   • Jaeger:           http://localhost:16686"; \
-		echo "   • Prometheus:       http://localhost:9090"; \
-		echo "   • Grafana:          http://localhost:3000 (admin/admin)"; \
+		echo "$(YELLOW)Observability:$(RESET)"; \
+		echo "   - Jaeger:           http://localhost:16686"; \
+		echo "   - Prometheus:       http://localhost:9090"; \
+		echo "   - Grafana:          http://localhost:3000 (admin/admin)"; \
 	fi
 
 down: ## Stop the Unison stack
-	@echo "$(BLUE)🛑 Stopping Unison platform...$(RESET)"
+	@echo "$(BLUE)Stopping Unison platform...$(RESET)"
 	@docker compose --profile $(PROFILE) down -v --remove-orphans
-	@echo "$(GREEN)✅ Stack stopped$(RESET)"
+	@echo "$(GREEN)Stack stopped$(RESET)"
 
 logs: ## Show logs from all services
-	@echo "$(BLUE)📋 Streaming logs from all services...$(RESET)"
+	@echo "$(BLUE)Streaming logs from all services...$(RESET)"
 	@docker compose --profile $(PROFILE) logs -f --tail=200
 
 logs-service: ## Show logs for a specific service (usage: make logs-service SERVICE=orchestrator)
 	@if [ -z "$(SERVICE)" ]; then \
-		echo "$(RED)❌ Please specify a service: make logs-service SERVICE=orchestrator$(RESET)"; \
+		echo "$(RED)Please specify a service: make logs-service SERVICE=orchestrator$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "$(BLUE)📋 Streaming logs from $(SERVICE)...$(RESET)"
+	@echo "$(BLUE)Streaming logs from $(SERVICE)...$(RESET)"
 	@docker compose --profile $(PROFILE) logs -f --tail=100 $(SERVICE)
 
 status: ## Show status of all services
-	@echo "$(BLUE)📊 Service Status:$(RESET)"
+	@echo "$(BLUE)Service Status:$(RESET)"
 	@docker compose --profile $(PROFILE) ps
 
 test-int: ## Run integration tests
-	@echo "$(BLUE)🧪 Running integration tests...$(RESET)"
+	@echo "$(BLUE)Running integration tests...$(RESET)"
 	@docker compose --profile $(PROFILE) up -d --wait
 	@sleep 10  # Wait for services to be fully ready
 	@python -m pytest tests/integration/ -v --tb=short --color=yes
-	@echo "$(GREEN)✅ Integration tests completed$(RESET)"
+	@echo "$(GREEN)Integration tests completed$(RESET)"
 
 test-unit: ## Run unit tests for platform
-	@echo "$(BLUE)🧪 Running platform unit tests...$(RESET)"
+	@echo "$(BLUE)Running platform unit tests...$(RESET)"
 	@python -m pytest tests/unit/ -v --tb=short --color=yes
-	@echo "$(GREEN)✅ Unit tests completed$(RESET)"
+	@echo "$(GREEN)Unit tests completed$(RESET)"
 
 pin: ## Pin exact image versions to artifacts.lock
-	@echo "$(BLUE)📌 Pinning image versions...$(RESET)"
+	@echo "$(BLUE)Pinning image versions...$(RESET)"
 	@./scripts/pin-images.sh
-	@echo "$(GREEN)✅ Image versions pinned to artifacts.lock$(RESET)"
+	@echo "$(GREEN)Image versions pinned to artifacts.lock$(RESET)"
 
 validate: ## Validate service contracts and dependencies
-	@echo "$(BLUE)🔍 Validating service contracts...$(RESET)"
+	@echo "$(BLUE)Validating service contracts...$(RESET)"
 	@./scripts/validate-contracts.sh
-	@echo "$(GREEN)✅ Contracts validated$(RESET)"
+	@echo "$(GREEN)Contracts validated$(RESET)"
 
 clean: ## Clean up Docker resources and caches
-	@echo "$(BLUE)🧹 Cleaning up Docker resources...$(RESET)"
+	@echo "$(BLUE)Cleaning up Docker resources...$(RESET)"
 	@docker compose --profile $(PROFILE) down -v --remove-orphans
 	@docker system prune -f
 	@docker volume prune -f
 	@docker network prune -f
-	@echo "$(GREEN)✅ Cleanup completed$(RESET)"
+	@echo "$(GREEN)Cleanup completed$(RESET)"
 
 dev: ## Development setup (start stack + logs)
-	@echo "$(BLUE)🔧 Starting development environment...$(RESET)"
+	@echo "$(BLUE)Starting development environment...$(RESET)"
 	@make up ENV=dev
 	@make logs
 
 prod: ## Production setup (start stack without logs)
-	@echo "$(BLUE)🏭 Starting production environment...$(RESET)"
+	@echo "$(BLUE)Starting production environment...$(RESET)"
 	@make up ENV=prod
 
 observability: ## Start stack with observability tools
-	@echo "$(BLUE)📊 Starting stack with observability...$(RESET)"
+	@echo "$(BLUE)Starting stack with observability...$(RESET)"
 	@make up ENV=observability
 
 health: ## Check health of all services
-	@echo "$(BLUE)🏥 Checking service health...$(RESET)"
+	@echo "$(BLUE)Checking service health...$(RESET)"
 	@./scripts/health-check.sh
-	@echo "$(GREEN)✅ Health check completed$(RESET)"
+	@echo "$(GREEN)Health check completed$(RESET)"
 
 restart: ## Restart all services
-	@echo "$(BLUE)🔄 Restarting services...$(RESET)"
+	@echo "$(BLUE)Restarting services...$(RESET)"
 	@docker compose --profile $(PROFILE) restart
-	@echo "$(GREEN)✅ Services restarted$(RESET)"
+	@echo "$(GREEN)Services restarted$(RESET)"
 
 restart-service: ## Restart a specific service (usage: make restart-service SERVICE=orchestrator)
 	@if [ -z "$(SERVICE)" ]; then \
-		echo "$(RED)❌ Please specify a service: make restart-service SERVICE=orchestrator$(RESET)"; \
+		echo "$(RED)Please specify a service: make restart-service SERVICE=orchestrator$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "$(BLUE)🔄 Restarting $(SERVICE)...$(RESET)"
+	@echo "$(BLUE)Restarting $(SERVICE)...$(RESET)"
 	@docker compose --profile $(PROFILE) restart $(SERVICE)
-	@echo "$(GREEN)✅ $(SERVICE) restarted$(RESET)"
+	@echo "$(GREEN)$(SERVICE) restarted$(RESET)"
 
 shell: ## Get shell in a service container (usage: make shell SERVICE=orchestrator)
 	@if [ -z "$(SERVICE)" ]; then \
-		echo "$(RED)❌ Please specify a service: make shell SERVICE=orchestrator$(RESET)"; \
+		echo "$(RED)Please specify a service: make shell SERVICE=orchestrator$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "$(BLUE)🐚 Opening shell in $(SERVICE)...$(RESET)"
+	@echo "$(BLUE)Opening shell in $(SERVICE)...$(RESET)"
 	@docker compose --profile $(PROFILE) exec $(SERVICE) /bin/bash
 
 exec: ## Execute command in a service (usage: make exec SERVICE=orchestrator CMD="ls -la")
 	@if [ -z "$(SERVICE)" ] || [ -z "$(CMD)" ]; then \
-		echo "$(RED)❌ Please specify service and command: make exec SERVICE=orchestrator CMD=\"ls -la\"$(RESET)"; \
+		echo "$(RED)Please specify service and command: make exec SERVICE=orchestrator CMD=\"ls -la\"$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "$(BLUE)⚡ Executing in $(SERVICE): $(CMD)$(RESET)"
+	@echo "$(BLUE)Executing in $(SERVICE): $(CMD)$(RESET)"
 	@docker compose --profile $(PROFILE) exec $(SERVICE) sh -c "$(CMD)"
 
 build: ## Build all services
-	@echo "$(BLUE)🔨 Building all services...$(RESET)"
+	@echo "$(BLUE)Building all services...$(RESET)"
 	@docker compose --profile $(PROFILE) build --parallel
-	@echo "$(GREEN)✅ Build completed$(RESET)"
+	@echo "$(GREEN)Build completed$(RESET)"
 
 pull: ## Pull latest images
-	@echo "$(BLUE)📥 Pulling latest images...$(RESET)"
+	@echo "$(BLUE)Pulling latest images...$(RESET)"
 	@docker compose --profile $(PROFILE) pull
-	@echo "$(GREEN)✅ Images pulled$(RESET)"
+	@echo "$(GREEN)Images pulled$(RESET)"
 
 update: ## Update stack (pull + up)
-	@echo "$(BLUE)🔄 Updating stack...$(RESET)"
+	@echo "$(BLUE)Updating stack...$(RESET)"
 	@make pull
 	@make up
-	@echo "$(GREEN)✅ Stack updated$(RESET)"
+	@echo "$(GREEN)Stack updated$(RESET)"
 
 backup: ## Backup all data volumes
-	@echo "$(BLUE)💾 Creating backup...$(RESET)"
+	@echo "$(BLUE)Creating backup...$(RESET)"
 	@mkdir -p backups/$(shell date +%Y%m%d_%H%M%S)
 	@docker run --rm -v unison-devstack_postgres_data:/data -v $$PWD/backups/$(shell date +%Y%m%d_%H%M%S):/backup alpine tar czf /backup/postgres_data.tar.gz -C /data .
 	@docker run --rm -v unison-devstack_redis_data:/data -v $$PWD/backups/$(shell date +%Y%m%d_%H%M%S):/backup alpine tar czf /backup/redis_data.tar.gz -C /data .
-	@echo "$(GREEN)✅ Backup created in backups/$(shell date +%Y%m%d_%H%M%S)$(RESET)"
+	@echo "$(GREEN)Backup created in backups/$(shell date +%Y%m%d_%H%M%S)$(RESET)"
 
 restore: ## Restore from backup (usage: make restore BACKUP_DIR=20231103_120000)
 	@if [ -z "$(BACKUP_DIR)" ]; then \
-		echo "$(RED)❌ Please specify backup directory: make restore BACKUP_DIR=20231103_120000$(RESET)"; \
+		echo "$(RED)Please specify backup directory: make restore BACKUP_DIR=20231103_120000$(RESET)"; \
 		exit 1; \
 	fi
-	@echo "$(BLUE)🔄 Restoring from backup $(BACKUP_DIR)...$(RESET)"
+	@echo "$(BLUE)Restoring from backup $(BACKUP_DIR)...$(RESET)"
 	@docker compose --profile $(PROFILE) down -v
 	@docker run --rm -v unison-devstack_postgres_data:/data -v $$PWD/backups/$(BACKUP_DIR):/backup alpine tar xzf /backup/postgres_data.tar.gz -C /data
 	@docker run --rm -v unison-devstack_redis_data:/data -v $$PWD/backups/$(BACKUP_DIR):/backup alpine tar xzf /backup/redis_data.tar.gz -C /data
 	@make up
-	@echo "$(GREEN)✅ Restore completed$(RESET)"
+	@echo "$(GREEN)Restore completed$(RESET)"
 
 migrate: ## Run database migrations
-	@echo "$(BLUE)🔄 Running database migrations...$(RESET)"
+	@echo "$(BLUE)Running database migrations...$(RESET)"
 	@./scripts/migrate.sh
-	@echo "$(GREEN)✅ Migrations completed$(RESET)"
+	@echo "$(GREEN)Migrations completed$(RESET)"
 
 seed: ## Seed database with test data
-	@echo "$(BLUE)🌱 Seeding database with test data...$(RESET)"
+	@echo "$(BLUE)Seeding database with test data...$(RESET)"
 	@./scripts/seed-data.sh
-	@echo "$(GREEN)✅ Data seeding completed$(RESET)"
+	@echo "$(GREEN)Data seeding completed$(RESET)"
 
 benchmark: ## Run performance benchmarks
-	@echo "$(BLUE)🏃 Running performance benchmarks...$(RESET)"
+	@echo "$(BLUE)Running performance benchmarks...$(RESET)"
 	@./scripts/benchmark.sh
-	@echo "$(GREEN)✅ Benchmarks completed$(RESET)"
+	@echo "$(GREEN)Benchmarks completed$(RESET)"
 
 security-scan: ## Run security vulnerability scan
-	@echo "$(BLUE)🔒 Running security scan...$(RESET)"
+	@echo "$(BLUE)Running security scan...$(RESET)"
 	@./scripts/security-scan.sh
-	@echo "$(GREEN)✅ Security scan completed$(RESET)"
+	@echo "$(GREEN)Security scan completed$(RESET)"
 
 docs: ## Generate documentation
-	@echo "$(BLUE)📚 Generating documentation...$(RESET)"
+	@echo "$(BLUE)Generating documentation...$(RESET)"
 	@./scripts/generate-docs.sh
-	@echo "$(GREEN)✅ Documentation generated$(RESET)"
+	@echo "$(GREEN)Documentation generated$(RESET)"
 
 # Development shortcuts
 quick-test: test-unit ## Quick unit test run
@@ -211,20 +211,76 @@ ci: validate test-unit test-int security-scan ## Full CI pipeline
 
 # Production operations
 deploy-prod: ## Deploy to production
-	@echo "$(BLUE)🚀 Deploying to production...$(RESET)"
+	@echo "$(BLUE)Deploying to production...$(RESET)"
 	@./scripts/deploy.sh prod
-	@echo "$(GREEN)✅ Production deployment completed$(RESET)"
+	@echo "$(GREEN)Production deployment completed$(RESET)"
 
 rollback: ## Rollback to previous version
-	@echo "$(BLUE)🔄 Rolling back...$(RESET)"
+	@echo "$(BLUE)Rolling back...$(RESET)"
 	@./scripts/rollback.sh
-	@echo "$(GREEN)✅ Rollback completed$(RESET)"
+	@echo "$(GREEN)Rollback completed$(RESET)"
 
 # Monitoring shortcuts
 monitor: observability ## Start with monitoring
 metrics: ## Show system metrics
-	@echo "$(BLUE)📊 System Metrics:$(RESET)"
+	@echo "$(BLUE)System Metrics:$(RESET)"
 	@docker stats --no-stream
 
 top: ## Show running processes
 	@docker compose --profile $(PROFILE) top
+# ============================================================================
+# Native Ubuntu Deployment (P1.1)
+# ============================================================================
+
+install-native: ## Install Unison natively on Ubuntu (requires sudo)
+	@echo "$(BLUE)Installing Unison natively on Ubuntu...$(RESET)"
+	@sudo ./scripts/native/ubuntu_install.sh
+	@echo "$(GREEN)Native installation complete$(RESET)"
+	@echo "$(YELLOW)Next steps:$(RESET)"
+	@echo "  - Start services: sudo unisonctl start"
+	@echo "  - Check status: sudo unisonctl status"
+	@echo "  - Test audio: sudo unisonctl test audio"
+
+native-start: ## Start native Unison services (systemd)
+	@echo "$(BLUE)Starting native Unison services...$(RESET)"
+	@sudo unisonctl start
+
+native-stop: ## Stop native Unison services
+	@echo "$(BLUE)Stopping native Unison services...$(RESET)"
+	@sudo unisonctl stop
+
+native-restart: ## Restart native Unison services
+	@echo "$(BLUE)Restarting native Unison services...$(RESET)"
+	@sudo unisonctl restart
+
+native-status: ## Check native service status
+	@sudo unisonctl status
+
+native-logs: ## View native service logs
+	@sudo unisonctl logs
+
+native-follow: ## Follow native service logs (usage: make native-follow SERVICE=orchestrator)
+	@if [ -z "$(SERVICE)" ]; then \
+		sudo unisonctl follow; \
+	else \
+		sudo unisonctl logs $(SERVICE); \
+	fi
+
+native-health: ## Check health of native services
+	@echo "$(BLUE)Checking native service health...$(RESET)"
+	@sudo unisonctl health
+
+native-test-audio: ## Test audio configuration
+	@echo "$(BLUE)Testing native audio path...$(RESET)"
+	@sudo unisonctl test audio
+
+native-enable: ## Enable services to start on boot
+	@echo "$(BLUE)Enabling services on boot...$(RESET)"
+	@sudo unisonctl enable
+	@echo "$(GREEN)Services will start on boot$(RESET)"
+
+native-disable: ## Disable services from starting on boot
+	@echo "$(BLUE)Disabling services on boot...$(RESET)"
+	@sudo unisonctl disable
+	@echo "$(GREEN)Services will not start on boot$(RESET)"
+

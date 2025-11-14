@@ -38,13 +38,13 @@ The Unison Platform transforms a distributed microservices architecture into a c
 
 ## 🚀 Quick Start
 
-### Prerequisites
+### Choose Your Deployment Method
 
-- **Docker Desktop** (or Docker Engine with Compose)
-- **Make** (for command shortcuts)
-- **Git** (for version control)
+Unison supports **two deployment modes** to fit different use cases:
 
-### One-Command Setup
+#### 🐳 **Docker Compose** (Recommended for Development)
+
+**Best for**: Development teams, cloud deployments, testing
 
 ```bash
 # Clone the platform repository
@@ -53,7 +53,6 @@ cd unison-platform
 
 # Configure environment
 cp .env.template .env
-# Edit .env with your configuration
 
 # Start the entire stack
 make up
@@ -61,6 +60,42 @@ make up
 # Verify everything is working
 make health
 ```
+
+#### 🖥️ **Native Ubuntu** (Recommended for End Users)
+
+**Best for**: Personal assistants, edge devices, production workstations
+
+```bash
+# One-command installation (Ubuntu 22.04/24.04)
+curl -sSL https://install.unison.ai | sudo bash
+
+# Or from source
+cd unison-platform
+sudo make install-native
+
+# Start services
+sudo unisonctl start
+
+# Check status
+sudo unisonctl status
+```
+
+**See [docs/deployment/ubuntu-native.md](docs/deployment/ubuntu-native.md) for complete native installation guide.**
+
+---
+
+### Prerequisites
+
+**Docker Deployment**:
+- Docker Desktop (or Docker Engine with Compose)
+- Make (for command shortcuts)
+- Git (for version control)
+
+**Native Ubuntu Deployment**:
+- Ubuntu 22.04 LTS or 24.04 LTS
+- 4GB+ RAM (8GB recommended)
+- 10GB free disk space
+- Microphone and speakers (for voice features)
 
 That's it! 🎉 The entire Unison platform is now running with all services interconnected.
 

@@ -9,7 +9,7 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List, Optional, AsyncGenerator
 from datetime import datetime
 from pydantic import BaseModel, Field
-from .events import EventEnvelope
+from .events import EventEnvelope, now_utc
 
 
 class HealthStatus(str):
@@ -29,7 +29,7 @@ class HealthResponse(BaseModel):
         description="Service health status"
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=now_utc,
         description="Health check timestamp"
     )
     service: str = Field(
@@ -96,7 +96,7 @@ class ServiceMetrics(BaseModel):
     """Service performance metrics"""
     
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
+        default_factory=now_utc,
         description="Metrics timestamp"
     )
     request_count: int = Field(
