@@ -2,9 +2,14 @@
 
 > **Enterprise-grade intent orchestration platform with one-command deployment and unified developer experience**
 
+> **Note:** This README reflects the standalone `unison-platform` repo. For the current multi-repo workspace (devstack + renderer), follow the workspace-level `docs/developer-guide.md`.
+
 ## 🎯 Overview
 
 The Unison Platform transforms a distributed microservices architecture into a cohesive, manageable system while maintaining development autonomy. It provides **hard interfaces**, **one-click orchestration**, and **consistent CI/CD** across all services.
+
+## Status
+Core docs/meta (active) — platform narrative and installer entrypoint; aligns with devstack and service READMEs.
 
 ### 🏗️ Architecture
 
@@ -105,16 +110,16 @@ Once started, all services are available at:
 
 | Service | Endpoint | Description |
 |---------|----------|-------------|
-| **Orchestrator** | http://localhost:8090 | Main intent orchestration |
-| **Intent Graph** | http://localhost:8080 | Intent processing & decomposition |
-| **Context Graph** | http://localhost:8091 | Context fusion & management |
-| **Experience Renderer** | http://localhost:8092 | Adaptive interface generation |
-| **Agent VDI** | http://localhost:8093 | Virtual display interface |
-| **Auth Service** | http://localhost:8083 | Authentication & authorization |
-| **Context Service** | http://localhost:8081 | Context management |
-| **Policy Service** | http://localhost:8083 | Policy enforcement |
-| **I/O Speech** | http://localhost:8084 | Speech processing |
-| **I/O Vision** | http://localhost:8086 | Vision processing |
+| **Orchestrator** | [http://localhost:8090](http://localhost:8090) | Main intent orchestration |
+| **Intent Graph** | [http://localhost:8080](http://localhost:8080) | Intent processing & decomposition |
+| **Context Graph** | [http://localhost:8091](http://localhost:8091) | Context fusion & management |
+| **Experience Renderer** | [http://localhost:8092](http://localhost:8092) | Adaptive interface generation |
+| **Agent VDI** | [http://localhost:8093](http://localhost:8093) | Virtual display interface |
+| **Auth Service** | [http://localhost:8083](http://localhost:8083) | Authentication & authorization |
+| **Context Service** | [http://localhost:8081](http://localhost:8081) | Context management |
+| **Policy Service** | [http://localhost:8083](http://localhost:8083) | Policy enforcement |
+| **I/O Speech** | [http://localhost:8084](http://localhost:8084) | Speech processing |
+| **I/O Vision** | [http://localhost:8086](http://localhost:8086) | Vision processing |
 | **I/O Core** | http://localhost:8085 | I/O coordination |
 | **Inference** | http://localhost:8087 | ML inference gateway |
 | **Storage** | http://localhost:8082 | Data persistence |
@@ -385,6 +390,12 @@ docker compose -f compose/compose.pinned.yaml up -d
 3. **Integration Testing**: Full stack validation
 4. **Release Bundle**: Generated compose files and artifacts
 5. **Deployment**: Reproducible deployment with pinned versions
+
+## ✅ Status and Testing
+Core docs/meta (active). Keep aligned with the workspace guides:
+- Workspace developer guide: `../docs/developer-guide.md`
+- Repo map: `../docs/unison-repo-map.md`
+- Docs lint: `npx --yes markdownlint-cli2`
 
 ## 📚 Documentation
 

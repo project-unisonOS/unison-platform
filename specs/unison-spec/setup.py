@@ -12,13 +12,11 @@ with open(os.path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 # Read version from __init__.py
-version = {}
-with open(os.path.join(this_directory, 'unison_spec', '__init__.py')) as f:
-    exec(f.read(), version)
+version = "1.0.0"
 
 setup(
     name="unison-spec",
-    version=version['__version__'],
+    version=version,
     author="Unison Platform Team",
     author_email="team@project-unisonos.org",
     description="Shared specifications and contracts for Unison services",
