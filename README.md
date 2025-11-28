@@ -2,7 +2,7 @@
 
 > **Enterprise-grade intent orchestration platform with one-command deployment and unified developer experience**
 
-> **Note:** This README reflects the standalone `unison-platform` repo. For the current multi-repo workspace (devstack + renderer), follow the workspace-level `docs/developer-guide.md`.
+> **Note:** This README reflects the standalone `unison-platform` repo. For the current multi-repo workspace (devstack + renderer), follow the workspace-level `unison-docs/dev/developer-guide.md`.
 
 ## 🎯 Overview
 
@@ -393,8 +393,8 @@ docker compose -f compose/compose.pinned.yaml up -d
 
 ## ✅ Status and Testing
 Core docs/meta (active). Keep aligned with the workspace guides:
-- Workspace developer guide: `../docs/developer-guide.md`
-- Repo map: `../docs/unison-repo-map.md`
+- Workspace developer guide: `../unison-docs/dev/developer-guide.md`
+- Repo map: `../unison-docs/dev/unison-repo-map.md`
 - Docs lint: `npx --yes markdownlint-cli2`
 
 ## 📚 Documentation
