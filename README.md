@@ -486,6 +486,10 @@ docker stats
 - **[Discussions](https://github.com/project-unisonos/unison-platform/discussions)**: Community discussions
 - **[Documentation](docs/)**: Comprehensive documentation
 
+## Docs
+
+Full docs at https://project-unisonos.github.io
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
