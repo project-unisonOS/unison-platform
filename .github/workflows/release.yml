@@ -72,8 +72,12 @@ jobs:
         with:
           files: |
             images/out/unisonos-wsl-${{ github.ref_name }}*.tar.gz
-            images/out/unisonos-vm-${{ github.ref_name }}/**
-            images/out/unisonos-iso-${{ github.ref_name }}/**
+            images/out/unisonos-vm-${{ github.ref_name }}/unisonos-vm-${{ github.ref_name }}.qcow2
+            images/out/unisonos-vm-${{ github.ref_name }}/unisonos-vm-${{ github.ref_name }}.vmdk
+            images/out/unisonos-vm-${{ github.ref_name }}/metadata.json
+            images/out/unisonos-iso-${{ github.ref_name }}/user-data
+            images/out/unisonos-iso-${{ github.ref_name }}/meta-data
+            images/out/unisonos-iso-${{ github.ref_name }}/models.json
             images/out/unisonos-autoinstall-seed-${{ github.ref_name }}.iso
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
