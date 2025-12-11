@@ -42,30 +42,63 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Derive version
+      - name: Derive version and tags (channel aware)
         id: version
         run: |
-          SEMVER=$(git describe --tags --always --dirty || echo "0.0.0")
+          REF="${GITHUB_REF}"
+          TODAY=$(date -u +%Y%m%d)
           SHA=${GITHUB_SHA::7}
-          echo "semver=$SEMVER" >> $GITHUB_OUTPUT
-          echo "sha=$SHA" >> $GITHUB_OUTPUT
+          TAG_FILE=tags.txt
+
+          if [[ "${REF}" == refs/tags/v* ]]; then
+            # Stable release tag: vX.Y.Z
+            VERSION="${REF#refs/tags/}"
+            MAJOR="${VERSION#v}"; MAJOR="${MAJOR%%.*}"
+            MINOR="${VERSION#v${MAJOR}.}"; MINOR="${MINOR%%.*}"
+            CHANNEL="stable"
+            echo "semver=${VERSION}" >> $GITHUB_OUTPUT
+            echo "channel=${CHANNEL}" >> $GITHUB_OUTPUT
+            {
+              echo "type=raw,value=${VERSION}"
+              echo "type=raw,value=latest"
+              echo "type=raw,value=v${MAJOR}.${MINOR}"
+              echo "type=raw,value=v${MAJOR}"
+            } > "${TAG_FILE}"
+          elif [[ "${REF}" == refs/heads/release/* ]]; then
+            # Release branch beta: release/x.y -> vX.Y.0-beta.<run>
+            BASE="${REF#refs/heads/release/}"
+            VERSION="v${BASE}.0-beta.${GITHUB_RUN_NUMBER}"
+            CHANNEL="beta"
+            echo "semver=${VERSION}" >> $GITHUB_OUTPUT
+            echo "channel=${CHANNEL}" >> $GITHUB_OUTPUT
+            {
+              echo "type=raw,value=${VERSION}"
+              echo "type=raw,value=${VERSION}-run${GITHUB_RUN_ATTEMPT}"
+            } > "${TAG_FILE}"
+          else
+            # Default to nightly edge off main and other branches
+            VERSION="edge-${GITHUB_REF_NAME:-main}-${TODAY}"
+            CHANNEL="nightly"
+            echo "semver=${VERSION}" >> $GITHUB_OUTPUT
+            echo "channel=${CHANNEL}" >> $GITHUB_OUTPUT
+            {
+              echo "type=raw,value=${VERSION}"
+              echo "type=sha,prefix=${GITHUB_REF_NAME:-main}-"
+            } > "${TAG_FILE}"
+          fi
+
+          echo "sha=${SHA}" >> $GITHUB_OUTPUT
           echo "domain=${{ inputs.domain }}" >> $GITHUB_OUTPUT
+          echo "tags<<'EOF'" >> $GITHUB_OUTPUT
+          cat "${TAG_FILE}" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ steps.version.outputs.sha }}
-            type=raw,value=${{ steps.version.outputs.semver }}
+          tags: ${{ steps.version.outputs.tags }}
           labels: |
             org.opencontainers.image.title=${{ inputs.image_name }}
             org.opencontainers.image.description=Unison ${{ inputs.domain }} service
