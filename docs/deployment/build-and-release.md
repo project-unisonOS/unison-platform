@@ -8,6 +8,7 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 - `unisonos-iso-<version>/` — Autoinstall seed (user-data/meta-data), models manifest, metadata for ISO baking.
 - `unisonos-autoinstall-seed-<version>.iso` — NoCloud seed ISO (attach as secondary CD or combine with Ubuntu Server ISO).
 - Version defaults to `git describe --tags --always` unless `VERSION` env is set; `MODEL_FLAVOR` selects model profile (`images/models.yaml`).
+- Default base OS: Ubuntu 24.04 (override with `UBUNTU_VERSION`/`UBUNTU_TAG` where applicable).
 
 ## Make Targets
 - `make image-wsl` — builds WSL tarball.

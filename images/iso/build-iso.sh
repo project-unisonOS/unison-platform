@@ -6,7 +6,7 @@ OUT_ROOT="${ROOT_DIR}/images/out"
 MODELS="${ROOT_DIR}/images/models.yaml"
 VERSION="${VERSION:-$(cd "${ROOT_DIR}" && git describe --tags --always 2>/dev/null || echo dev)}"
 FLAVOR="${MODEL_FLAVOR:-default}"
-UBUNTU_VERSION="${UBUNTU_VERSION:-22.04}"
+UBUNTU_VERSION="${UBUNTU_VERSION:-24.04}"
 
 ARTIFACT_DIR="${OUT_ROOT}/unisonos-iso-${VERSION}"
 SEED_ISO="${OUT_ROOT}/unisonos-autoinstall-seed-${VERSION}.iso"

@@ -12,3 +12,5 @@ Build entrypoint: `make image-iso` (calls `images/iso/build-iso.sh`), writes aut
 Outputs:
 - `images/out/unisonos-iso-<version>/autoinstall/` — `user-data`, `meta-data`, `models.json`.
 - `images/out/unisonos-autoinstall-seed-<version>.iso` — NoCloud seed ISO (attach as secondary CD-ROM or combine with an Ubuntu Server ISO).
+
+Default base: Ubuntu Server 24.04 (override with `UBUNTU_VERSION=22.04` if required).

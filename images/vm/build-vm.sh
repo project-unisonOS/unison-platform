@@ -6,7 +6,7 @@ OUT_ROOT="${ROOT_DIR}/images/out"
 MODELS="${ROOT_DIR}/images/models.yaml"
 VERSION="${VERSION:-$(cd "${ROOT_DIR}" && git describe --tags --always 2>/dev/null || echo dev)}"
 FLAVOR="${MODEL_FLAVOR:-default}"
-UBUNTU_VERSION="${UBUNTU_VERSION:-22.04}"
+UBUNTU_VERSION="${UBUNTU_VERSION:-24.04}"
 BASE_URL="https://cloud-images.ubuntu.com/releases/${UBUNTU_VERSION}/release"
 BASE_IMAGE="ubuntu-${UBUNTU_VERSION}-server-cloudimg-amd64.img"
 
@@ -122,7 +122,7 @@ This directory holds stubs for building UnisonOS VM images:
 - metadata.json describing the intended artifact
 
 Next steps: replace the Packer stub with real qemu/vmware builders that:
-- Start from Ubuntu cloud image (22.04/24.04)
+- Start from Ubuntu 24.04 cloud image by default (22.04 optional via UBUNTU_VERSION)
 - Provision Docker + unison-platform compose bundle
 - Preload models per models.json (optional)
 - Emit qcow2/vmdk artifacts named unisonos-vm-<version>.<ext>

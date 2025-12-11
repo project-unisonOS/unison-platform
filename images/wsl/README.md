@@ -10,3 +10,5 @@ Planned steps:
 - Optional: publish a `unison-os-wsl.tar.gz` rootfs.
 
 Build entrypoint: `make image-wsl` (calls `images/wsl/build-wsl.sh`), outputs to `images/out/unisonos-wsl-<version>.tar.gz`.
+
+Defaults: Ubuntu 24.04 base for the rootfs tarball (override with `UBUNTU_TAG=22.04` if needed).

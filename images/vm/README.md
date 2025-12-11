@@ -8,3 +8,5 @@ Planned steps:
 - Output: `unisonos-vm-qcow2-<version>.img` and `unisonos-vm-vmdk-<version>.vmdk`.
 
 Build entrypoint: `make image-vm` (calls `images/vm/build-vm.sh`), writes bundle under `images/out/unisonos-vm-<version>/`.
+
+Defaults: Ubuntu 24.04 cloud image (override with `UBUNTU_VERSION=22.04` if needed).
