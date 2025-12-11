@@ -158,3 +158,28 @@ jobs:
       - name: Cleanup
         if: always()
         run: docker stop service-under-test && docker rm service-under-test
+
+  qa-smoke:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start compose stack (prod)
+        run: |
+          docker compose -f docker-compose.prod.yml up -d --wait
+
+      - name: Run QA smoke
+        env:
+          TARGET_HOST: http://localhost
+        run: |
+          python -m pytest qa -v --tb=short --color=yes
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.prod.yml logs --tail=200
+
+      - name: Teardown
+        if: always()
+        run: docker compose -f docker-compose.prod.yml down -v --remove-orphans
