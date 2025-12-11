@@ -43,6 +43,7 @@ jobs:
         run: |
           IMAGE_LOWER=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')
           docker build -t "$IMAGE_LOWER" .
+          cosign verify --version >/dev/null 2>&1 || true
           COSIGN_EXPERIMENTAL=1 cosign sign --yes "$IMAGE_LOWER"
           docker push "$IMAGE_LOWER"
 
