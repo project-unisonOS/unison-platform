@@ -9,4 +9,4 @@ Planned steps:
 - Seed `.env` for WSL defaults and start the stack (`unisonctl start` equivalent).
 - Optional: publish a `unison-os-wsl.tar.gz` rootfs.
 
-Build entrypoint: `make image-wsl` (calls `images/wsl/build-wsl.sh`).
+Build entrypoint: `make image-wsl` (calls `images/wsl/build-wsl.sh`), outputs to `images/out/unisonos-wsl-<version>.tar.gz`.

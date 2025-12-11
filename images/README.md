@@ -10,5 +10,6 @@ Planned components:
 - Make targets: `make image-wsl`, `make image-vm`, `make image-iso`.
 - Outputs published alongside `unison-platform` releases.
 - Model manifest stub: `models.yaml` to control default/preloaded models per flavor.
+- Build outputs land under `images/out/` with versioned filenames.
 
 Status: scaffolding — implementation will land in Phase 2.

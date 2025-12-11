@@ -40,3 +40,5 @@ out/
 *.dmg
 *.AppImage
 
+# Image build artifacts
+images/out/
