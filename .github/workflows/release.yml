@@ -29,6 +29,15 @@ jobs:
         run: |
           make image-wsl image-vm image-iso
 
+      - name: Verify images signed (keyless)
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+        run: |
+          cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp "https://github.com/${{ github.repository }}" \
+            ghcr.io/${{ github.repository }}/unisonos-wsl:${{ github.ref_name }}
+          cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp "https://github.com/${{ github.repository }}" \
+            ghcr.io/${{ github.repository }}/unisonos-vm:${{ github.ref_name }}
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
