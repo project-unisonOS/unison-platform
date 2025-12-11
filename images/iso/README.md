@@ -16,6 +16,6 @@ Outputs:
 Default base: Ubuntu Server 24.04 (override with `UBUNTU_VERSION=22.04` if required).
 
 Security/hardening:
-- Replace the placeholder password and provide real `ssh_authorized_keys`.
-- Set `ssh.allow-pw: false` when keys are present.
-- Add hardening (firewall, auto-updates) to `autoinstall/user-data` before production use.
+- Replace the placeholder password (or lock the account) and provide real `ssh_authorized_keys` (ed25519 recommended).
+- Keep `ssh.allow-pw: false` when keys are present.
+- Enable firewall + unattended upgrades (included in the stub) and adjust allowed ports as needed.

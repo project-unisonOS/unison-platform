@@ -60,19 +60,23 @@ autoinstall:
   identity:
     hostname: unisonos
     username: unison
-    password: "$6$unison$QKpsK2F5iVUE9VumXZhBxxDqjvYCyaY0lUD4iifz9Qpc2K05KkRQ9zCBVYb5FZygbh/Tg4SKFmZ1yFd1HTsIQ0"  # replace for production
+    password: "$6$unison$QKpsK2F5iVUE9VumXZhBxxDqjvYCyaY0lUD4iifz9Qpc2K05KkRQ9zCBVYb5FZygbh/Tg4SKFmZ1yFd1HTsIQ0"  # replace for production or lock account
   ssh:
     install-server: true
-    allow-pw: true  # set false when ssh_authorized_keys is provided
+    allow-pw: false  # set true only if you rotate the password above
   ssh_authorized_keys:
-    - "ssh-rsa REPLACE_WITH_REAL_KEY"
+    - "ssh-ed25519 REPLACE_WITH_REAL_KEY"
   packages:
     - docker.io
     - docker-compose
     - git
+    - unattended-upgrades
+    - ufw
   late-commands:
     - curtin in-target --target=/target -- bash -c "cd /opt && git clone https://github.com/project-unisonOS/unison-platform.git"
     - curtin in-target --target=/target -- bash -c "cd /opt/unison-platform && make up ENV=prod"
+    - curtin in-target --target=/target -- bash -c "ufw allow 22 && ufw allow 80 && ufw allow 443 && ufw --force enable"
+    - curtin in-target --target=/target -- bash -c "systemctl enable unattended-upgrades"
 USERDATA
 
   cat > "${ARTIFACT_DIR}/autoinstall/meta-data" <<'METADATA'
