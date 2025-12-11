@@ -62,30 +62,6 @@ write_packer_stub() {
 variable "version" { type = string }
 variable "model_flavor" { type = string }
 
-fetch_cloud_image() {
-  if [ ! -f "${TMP_IMAGE}" ]; then
-    echo "Downloading Ubuntu cloud image ${BASE_IMAGE}..."
-    curl -fsSL "${BASE_URL}/${BASE_IMAGE}" -o "${TMP_IMAGE}"
-  fi
-}
-
-emit_qcow2() {
-  if ! command -v qemu-img >/dev/null 2>&1; then
-    echo "qemu-img not found; install qemu-utils to generate qcow2/vmdk images." >&2
-    return
-  fi
-  echo "Converting cloud image to qcow2..."
-  cp "${TMP_IMAGE}" "${QCOW_OUT}"
-}
-
-emit_vmdk() {
-  if ! command -v qemu-img >/dev/null 2>&1; then
-    return
-  fi
-  echo "Converting qcow2 to vmdk..."
-  qemu-img convert -O vmdk "${TMP_IMAGE}" "${VMDK_OUT}"
-}
-
 source "null" "placeholder" {}
 
 build {
@@ -127,6 +103,30 @@ Next steps: replace the Packer stub with real qemu/vmware builders that:
 - Preload models per models.json (optional)
 - Emit qcow2/vmdk artifacts named unisonos-vm-<version>.<ext>
 DOC
+}
+
+fetch_cloud_image() {
+  if [ ! -f "${TMP_IMAGE}" ]; then
+    echo "Downloading Ubuntu cloud image ${BASE_IMAGE}..."
+    curl -fsSL "${BASE_URL}/${BASE_IMAGE}" -o "${TMP_IMAGE}"
+  fi
+}
+
+emit_qcow2() {
+  if ! command -v qemu-img >/dev/null 2>&1; then
+    echo "qemu-img not found; install qemu-utils to generate qcow2/vmdk images." >&2
+    return
+  fi
+  echo "Converting cloud image to qcow2..."
+  cp "${TMP_IMAGE}" "${QCOW_OUT}"
+}
+
+emit_vmdk() {
+  if ! command -v qemu-img >/dev/null 2>&1; then
+    return
+  fi
+  echo "Converting qcow2 to vmdk..."
+  qemu-img convert -O vmdk "${TMP_IMAGE}" "${VMDK_OUT}"
 }
 
 render_models_manifest
