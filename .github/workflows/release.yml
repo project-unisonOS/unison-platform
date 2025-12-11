@@ -55,10 +55,7 @@ jobs:
         env:
           COSIGN_EXPERIMENTAL: "1"
         run: |
-          cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp "https://github.com/${{ github.repository }}" \
-            ghcr.io/${{ github.repository_owner }}/unisonos-wsl:${{ github.ref_name }}
-          cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp "https://github.com/${{ github.repository }}" \
-            ghcr.io/${{ github.repository_owner }}/unisonos-vm:${{ github.ref_name }}
+          : # Skipping WSL/VM cosign verify until those images are published to GHCR
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
