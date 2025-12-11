@@ -1,10 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Placeholder installer for hosts with Docker/Compose preinstalled.
-# TODO: Implement:
-#  - Validate Docker/Compose availability
-#  - Pull tagged images from GHCR
-#  - Render compose overrides and .env from versioned templates
-#  - Start the platform stack and verify health
-echo "install-docker.sh: placeholder script. Implementation pending."
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="$(cd "${SCRIPT_DIR}/.." && pwd)"
+source "${SCRIPT_DIR}/common.sh"
+
+require_root
+require_docker
+
+echo "Installing Unison Platform (Docker) into ${PREFIX}"
+cd "${ROOT_DIR}"
+copy_bundle
+seed_env
+write_systemd_unit
+pull_images
+start_stack
+
+echo "Installation complete. Edit ${ENV_FILE} for secrets and rerun: systemctl restart unison-platform"
