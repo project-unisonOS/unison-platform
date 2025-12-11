@@ -37,8 +37,7 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push platform image (optional)
-        if: false  # No Dockerfile in this repo; skip image publish for now
+      - name: Build and push platform image
         env:
           IMAGE: ghcr.io/${{ github.repository_owner }}/unison-platform:${{ github.ref_name }}
         run: |
@@ -48,7 +47,6 @@ jobs:
           docker push "$IMAGE_LOWER"
 
       - name: Verify images signed (keyless)
-        if: false  # skipped until images are published to GHCR
         env:
           COSIGN_EXPERIMENTAL: "1"
         run: |
