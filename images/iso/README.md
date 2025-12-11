@@ -14,3 +14,8 @@ Outputs:
 - `images/out/unisonos-autoinstall-seed-<version>.iso` — NoCloud seed ISO (attach as secondary CD-ROM or combine with an Ubuntu Server ISO).
 
 Default base: Ubuntu Server 24.04 (override with `UBUNTU_VERSION=22.04` if required).
+
+Security/hardening:
+- Replace the placeholder password and provide real `ssh_authorized_keys`.
+- Set `ssh.allow-pw: false` when keys are present.
+- Add hardening (firewall, auto-updates) to `autoinstall/user-data` before production use.

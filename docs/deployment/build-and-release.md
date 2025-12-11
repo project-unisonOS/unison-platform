@@ -9,6 +9,7 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 - `unisonos-autoinstall-seed-<version>.iso` — NoCloud seed ISO (attach as secondary CD or combine with Ubuntu Server ISO).
 - Version defaults to `git describe --tags --always` unless `VERSION` env is set; `MODEL_FLAVOR` selects model profile (`images/models.yaml`).
 - Default base OS: Ubuntu 24.04 (override with `UBUNTU_VERSION`/`UBUNTU_TAG` where applicable).
+- VM bundle includes `packer.pkr.hcl` (qemu builder) and `provision.sh` placeholder to install Docker + platform.
 
 ## Make Targets
 - `make image-wsl` — builds WSL tarball.

@@ -6,6 +6,7 @@ Planned steps:
 - Use Packer (or equivalent) to consume Ubuntu cloud image.
 - Provision with Docker, platform Compose, Ollama/local models, and systemd units to start Unison on boot.
 - Output: `unisonos-vm-qcow2-<version>.img` and `unisonos-vm-vmdk-<version>.vmdk`.
+- Template: `packer.pkr.hcl` (qemu builder against cloud image) + `provision.sh` placeholder to install platform.
 
 Build entrypoint: `make image-vm` (calls `images/vm/build-vm.sh`), writes bundle under `images/out/unisonos-vm-<version>/`.
 

@@ -55,27 +55,6 @@ with open(target, "w") as fh:
 PY
 }
 
-write_packer_stub() {
-  cat > "${ARTIFACT_DIR}/packer.pkr.hcl" <<'PKR'
-# Packer stub for UnisonOS VM images (QCOW2/VMDK)
-# Replace with real builders (e.g., qemu, vmware-iso) if Packer is available.
-variable "version" { type = string }
-variable "model_flavor" { type = string }
-
-source "null" "placeholder" {}
-
-build {
-  name = "unisonos-vm"
-  sources = ["source.null.placeholder"]
-  provisioner "shell-local" {
-    inline = [
-      "echo Packer build placeholder for UnisonOS ${var.version} (${var.model_flavor})"
-    ]
-  }
-}
-PKR
-}
-
 write_metadata() {
   cat > "${ARTIFACT_DIR}/metadata.json" <<META
 {
@@ -105,6 +84,18 @@ Next steps: replace the Packer stub with real qemu/vmware builders that:
 DOC
 }
 
+copy_packer_bundle() {
+  local src_pkr="${ROOT_DIR}/images/vm/packer.pkr.hcl"
+  local src_provision="${ROOT_DIR}/images/vm/provision.sh"
+  if [ -f "${src_pkr}" ]; then
+    cp "${src_pkr}" "${ARTIFACT_DIR}/packer.pkr.hcl"
+  fi
+  if [ -f "${src_provision}" ]; then
+    cp "${src_provision}" "${ARTIFACT_DIR}/provision.sh"
+    chmod +x "${ARTIFACT_DIR}/provision.sh"
+  fi
+}
+
 fetch_cloud_image() {
   if [ ! -f "${TMP_IMAGE}" ]; then
     echo "Downloading Ubuntu cloud image ${BASE_IMAGE}..."
@@ -130,8 +121,8 @@ emit_vmdk() {
 }
 
 render_models_manifest
-write_packer_stub
 write_metadata
+copy_packer_bundle
 fetch_cloud_image
 emit_qcow2
 emit_vmdk
