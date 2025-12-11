@@ -60,7 +60,12 @@ autoinstall:
   identity:
     hostname: unisonos
     username: unison
-    password: "$6$unison$QKpsK2F5iVUE9VumXZhBxxDqjvYCyaY0lUD4iifz9Qpc2K05KkRQ9zCBVYb5FZygbh/Tg4SKFmZ1yFd1HTsIQ0"  # placeholder, change in production
+    password: "$6$unison$QKpsK2F5iVUE9VumXZhBxxDqjvYCyaY0lUD4iifz9Qpc2K05KkRQ9zCBVYb5FZygbh/Tg4SKFmZ1yFd1HTsIQ0"  # replace for production
+  ssh:
+    install-server: true
+    allow-pw: true  # set false when ssh_authorized_keys is provided
+  ssh_authorized_keys:
+    - "ssh-rsa REPLACE_WITH_REAL_KEY"
   packages:
     - docker.io
     - docker-compose

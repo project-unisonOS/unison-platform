@@ -1,0 +1,51 @@
+name: Platform Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  packages: read
+
+jobs:
+  build-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install tooling
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qemu-utils xorriso python3-yaml
+
+      - name: Build platform artifacts
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          make image-wsl image-vm image-iso
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: unison-platform-${{ github.ref_name }}-artifacts
+          path: |
+            images/out/unisonos-wsl-${{ github.ref_name }}*.tar.gz
+            images/out/unisonos-vm-${{ github.ref_name }}/**
+            images/out/unisonos-iso-${{ github.ref_name }}/**
+            images/out/unisonos-autoinstall-seed-${{ github.ref_name }}.iso
+
+      - name: Publish GitHub Release assets
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            images/out/unisonos-wsl-${{ github.ref_name }}*.tar.gz
+            images/out/unisonos-vm-${{ github.ref_name }}/**
+            images/out/unisonos-iso-${{ github.ref_name }}/**
+            images/out/unisonos-autoinstall-seed-${{ github.ref_name }}.iso
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

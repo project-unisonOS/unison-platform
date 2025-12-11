@@ -15,6 +15,7 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 - `make image-vm` — writes VM bundle directory.
 - `make image-iso` — writes autoinstall seed bundle.
 - `make qa-smoke` — runs platform health + inference smoke tests (used in CI).
+- `release.yml` workflow — on `v*` tags, installs tooling, builds images/seed ISO, uploads artifacts, and attaches them to GitHub Releases.
 
 ## Installers (`installer/`)
 - `install-docker.sh` — assumes Docker/Compose present; seeds `/etc/unison/platform.env`, installs `unison-platform.service`, pulls images, starts stack.
