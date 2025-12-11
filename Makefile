@@ -2,6 +2,7 @@
 # Provides one-command orchestration for the entire Unison stack
 
 .PHONY: help up down logs test-int pin clean status observability dev prod
+.PHONY: image-wsl image-vm image-iso qa-smoke
 
 # Default environment
 ENV ?= dev
@@ -199,6 +200,24 @@ security-scan: ## Run security vulnerability scan
 	@./scripts/security-scan.sh
 	@echo "$(GREEN)Security scan completed$(RESET)"
 
+# Image build scaffolding (Phase 2)
+image-wsl: ## Build WSL rootfs/script (scaffolding)
+	@echo "$(BLUE)Building WSL artifact (placeholder)...$(RESET)"
+	@bash images/wsl/build-wsl.sh
+
+image-vm: ## Build VM images (QCOW2/VMDK) (scaffolding)
+	@echo "$(BLUE)Building VM artifacts (placeholder)...$(RESET)"
+	@bash images/vm/build-vm.sh
+
+image-iso: ## Build autoinstall ISO (scaffolding)
+	@echo "$(BLUE)Building ISO artifact (placeholder)...$(RESET)"
+	@bash images/iso/build-iso.sh
+
+qa-smoke: ## Run platform smoke tests (scaffolding)
+	@echo "$(BLUE)Running platform smoke tests...$(RESET)"
+	@python -m pytest qa -v --tb=short
+	@echo "$(GREEN)QA smoke completed$(RESET)"
+
 docs: ## Generate documentation
 	@echo "$(BLUE)Generating documentation...$(RESET)"
 	@./scripts/generate-docs.sh
@@ -283,4 +302,3 @@ native-disable: ## Disable services from starting on boot
 	@echo "$(BLUE)Disabling services on boot...$(RESET)"
 	@sudo unisonctl disable
 	@echo "$(GREEN)Services will not start on boot$(RESET)"
-

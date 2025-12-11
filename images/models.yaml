@@ -1,0 +1,16 @@
+# Default model manifest for image builds
+default:
+  provider: ollama
+  text_model: qwen2.5
+  multimodal_model: qwen2.5
+  preload: true
+flavors:
+  light:
+    preload: false
+  full-qwen:
+    preload: true
+    models:
+      - qwen2.5
+      - qwen2.5-coder
+
+# TODO: In image builds, use this manifest to pull/preload models and validate at boot.

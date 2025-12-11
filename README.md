@@ -183,6 +183,13 @@ make shell SERVICE=context-graph
 make exec SERVICE=auth CMD="env | grep SERVICE"
 ```
 
+## Platform Distribution & Deployment
+
+- **images/** – scaffolding for WSL, VM (QCOW2/VMDK), and bare-metal ISO builders (Ubuntu autoinstall). Targets will share common provisioners for Docker, platform Compose, local models, and systemd units.
+- **installer/** – curl|bash entrypoints and install scripts for native Ubuntu, Docker hosts, and WSL. Will emit configs and systemd units for boot-time start.
+- **qa/** – end-to-end and hardware smoke tests invoked by CI and release workflows.
+- Roadmap: see `unison-docs/roadmap/deployment-platform-roadmap.md` for phased implementation.
+
 ## 🏗️ Platform Architecture
 
 ### Domain Organization
