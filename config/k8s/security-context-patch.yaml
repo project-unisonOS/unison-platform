@@ -1,0 +1,23 @@
+# Kustomize patch: apply strict securityContext to core workloads.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: PLACEHOLDER
+  namespace: core
+spec:
+  template:
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: PLACEHOLDER
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
