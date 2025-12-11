@@ -7,7 +7,8 @@ on:
 
 permissions:
   contents: write
-  packages: read
+  packages: write
+  id-token: write
 
 jobs:
   build-artifacts:
@@ -28,6 +29,20 @@ jobs:
           VERSION: ${{ github.ref_name }}
         run: |
           make image-wsl image-vm image-iso
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push platform image (optional)
+        if: github.event_name == 'push'
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/unison-platform:${{ github.ref_name }} .
+          COSIGN_EXPERIMENTAL=1 cosign sign --yes ghcr.io/${{ github.repository }}/unison-platform:${{ github.ref_name }}
+          docker push ghcr.io/${{ github.repository }}/unison-platform:${{ github.ref_name }}
 
       - name: Verify images signed (keyless)
         env:
