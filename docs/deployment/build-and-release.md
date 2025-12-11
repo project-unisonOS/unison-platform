@@ -29,6 +29,7 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
   - Stable: `:vX.Y.Z` and `:latest` for platform.
 - Platform artifacts (WSL/VM/ISO + installers) will be attached to GitHub Releases in `unison-platform` for tagged versions.
 - Model manifest (`images/models.yaml`) drives model preload selection; include rendered `models.json` with published artifacts.
+- Service repos can call the shared workflow `project-unisonOS/unison-platform/.github/workflows/reusable-build.yml@main` to inherit the same tag semantics and GHCR labels.
 
 ## Usage Notes
 - Before publishing artifacts, ensure secrets in `/etc/unison/platform.env` (or shipped `.env` template) are set.
