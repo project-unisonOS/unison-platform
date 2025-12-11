@@ -6,9 +6,11 @@ OUT_ROOT="${ROOT_DIR}/images/out"
 MODELS="${ROOT_DIR}/images/models.yaml"
 VERSION="${VERSION:-$(cd "${ROOT_DIR}" && git describe --tags --always 2>/dev/null || echo dev)}"
 FLAVOR="${MODEL_FLAVOR:-default}"
+UBUNTU_TAG="${UBUNTU_TAG:-22.04}"
 
 ARTIFACT_DIR="${OUT_ROOT}/unisonos-wsl-${VERSION}"
 TARBALL="${OUT_ROOT}/unisonos-wsl-${VERSION}.tar.gz"
+ROOTFS_TARBALL="${OUT_ROOT}/unisonos-wsl-rootfs-${VERSION}.tar.gz"
 
 mkdir -p "${ARTIFACT_DIR}"
 
@@ -93,7 +95,22 @@ package_artifact() {
   echo "WSL bundle created at ${TARBALL}"
 }
 
+build_rootfs_tarball() {
+  if ! command -v docker >/dev/null 2>&1; then
+    echo "docker not available; skipping rootfs tarball." >&2
+    return
+  fi
+  local cid
+  echo "Building Ubuntu ${UBUNTU_TAG} rootfs tarball for WSL..."
+  docker pull "ubuntu:${UBUNTU_TAG}" >/dev/null
+  cid=$(docker create "ubuntu:${UBUNTU_TAG}")
+  docker export "${cid}" | gzip > "${ROOTFS_TARBALL}"
+  docker rm "${cid}" >/dev/null
+  echo "WSL rootfs tarball created at ${ROOTFS_TARBALL}"
+}
+
 copy_platform_bundle
 render_models_manifest
 write_metadata
 package_artifact
+build_rootfs_tarball

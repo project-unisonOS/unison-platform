@@ -6,10 +6,16 @@ OUT_ROOT="${ROOT_DIR}/images/out"
 MODELS="${ROOT_DIR}/images/models.yaml"
 VERSION="${VERSION:-$(cd "${ROOT_DIR}" && git describe --tags --always 2>/dev/null || echo dev)}"
 FLAVOR="${MODEL_FLAVOR:-default}"
+UBUNTU_VERSION="${UBUNTU_VERSION:-22.04}"
+BASE_URL="https://cloud-images.ubuntu.com/releases/${UBUNTU_VERSION}/release"
+BASE_IMAGE="ubuntu-${UBUNTU_VERSION}-server-cloudimg-amd64.img"
 
 ARTIFACT_DIR="${OUT_ROOT}/unisonos-vm-${VERSION}"
 
 mkdir -p "${ARTIFACT_DIR}"
+TMP_IMAGE="${ARTIFACT_DIR}/${BASE_IMAGE}"
+QCOW_OUT="${ARTIFACT_DIR}/unisonos-vm-${VERSION}.qcow2"
+VMDK_OUT="${ARTIFACT_DIR}/unisonos-vm-${VERSION}.vmdk"
 
 render_models_manifest() {
   local target="${ARTIFACT_DIR}/models.json"
@@ -52,9 +58,33 @@ PY
 write_packer_stub() {
   cat > "${ARTIFACT_DIR}/packer.pkr.hcl" <<'PKR'
 # Packer stub for UnisonOS VM images (QCOW2/VMDK)
-# TODO: replace with real builders (e.g., qemu, vmware-iso)
+# Replace with real builders (e.g., qemu, vmware-iso) if Packer is available.
 variable "version" { type = string }
 variable "model_flavor" { type = string }
+
+fetch_cloud_image() {
+  if [ ! -f "${TMP_IMAGE}" ]; then
+    echo "Downloading Ubuntu cloud image ${BASE_IMAGE}..."
+    curl -fsSL "${BASE_URL}/${BASE_IMAGE}" -o "${TMP_IMAGE}"
+  fi
+}
+
+emit_qcow2() {
+  if ! command -v qemu-img >/dev/null 2>&1; then
+    echo "qemu-img not found; install qemu-utils to generate qcow2/vmdk images." >&2
+    return
+  fi
+  echo "Converting cloud image to qcow2..."
+  cp "${TMP_IMAGE}" "${QCOW_OUT}"
+}
+
+emit_vmdk() {
+  if ! command -v qemu-img >/dev/null 2>&1; then
+    return
+  fi
+  echo "Converting qcow2 to vmdk..."
+  qemu-img convert -O vmdk "${TMP_IMAGE}" "${VMDK_OUT}"
+}
 
 source "null" "placeholder" {}
 
@@ -76,6 +106,8 @@ write_metadata() {
   "artifact": "unisonos-vm",
   "version": "${VERSION}",
   "model_flavor": "${FLAVOR}",
+  "ubuntu_version": "${UBUNTU_VERSION}",
+  "base_image": "${BASE_URL}/${BASE_IMAGE}",
   "generated_at": "$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
   "composer": "unison-platform/images/vm/build-vm.sh"
 }
@@ -100,5 +132,8 @@ DOC
 render_models_manifest
 write_packer_stub
 write_metadata
+fetch_cloud_image
+emit_qcow2
+emit_vmdk
 
 echo "VM bundle written to ${ARTIFACT_DIR}"

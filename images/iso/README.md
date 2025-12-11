@@ -8,3 +8,7 @@ Planned steps:
 - Install Docker or native services, configure platform env, and enable systemd units so Unison starts on boot.
 
 Build entrypoint: `make image-iso` (calls `images/iso/build-iso.sh`), writes autoinstall seed bundle under `images/out/unisonos-iso-<version>/`.
+
+Outputs:
+- `images/out/unisonos-iso-<version>/autoinstall/` — `user-data`, `meta-data`, `models.json`.
+- `images/out/unisonos-autoinstall-seed-<version>.iso` — NoCloud seed ISO (attach as secondary CD-ROM or combine with an Ubuntu Server ISO).

@@ -6,8 +6,10 @@ OUT_ROOT="${ROOT_DIR}/images/out"
 MODELS="${ROOT_DIR}/images/models.yaml"
 VERSION="${VERSION:-$(cd "${ROOT_DIR}" && git describe --tags --always 2>/dev/null || echo dev)}"
 FLAVOR="${MODEL_FLAVOR:-default}"
+UBUNTU_VERSION="${UBUNTU_VERSION:-22.04}"
 
 ARTIFACT_DIR="${OUT_ROOT}/unisonos-iso-${VERSION}"
+SEED_ISO="${OUT_ROOT}/unisonos-autoinstall-seed-${VERSION}.iso"
 
 mkdir -p "${ARTIFACT_DIR}/autoinstall"
 
@@ -100,8 +102,29 @@ Next steps: use tools like `xorriso`/`mkisofs` to bake these seeds into an Ubunt
 DOC
 }
 
+make_seed_iso() {
+  local tool=""
+  if command -v xorriso >/dev/null 2>&1; then
+    tool="xorriso -as mkisofs"
+  elif command -v genisoimage >/dev/null 2>&1; then
+    tool="genisoimage"
+  elif command -v mkisofs >/dev/null 2>&1; then
+    tool="mkisofs"
+  else
+    echo "No ISO creation tool found (xorriso/genisoimage/mkisofs). Skipping seed ISO build."
+    echo "Autoinstall seed files are available under ${ARTIFACT_DIR}/autoinstall"
+    return
+  fi
+
+  echo "Building autoinstall seed ISO with ${tool}..."
+  (cd "${ARTIFACT_DIR}/autoinstall" && \
+    ${tool} -volid cidata -joliet -rock -o "${SEED_ISO}" user-data meta-data models.json)
+  echo "Seed ISO written to ${SEED_ISO}"
+}
+
 render_models_manifest
 write_autoinstall_stub
 write_metadata
+make_seed_iso
 
 echo "ISO seed bundle written to ${ARTIFACT_DIR}"

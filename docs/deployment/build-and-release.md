@@ -6,6 +6,7 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 - `unisonos-wsl-<version>.tar.gz` — WSL bundle (compose, env template, models manifest).
 - `unisonos-vm-<version>/` — VM bundle with Packer stub, models manifest, metadata (targets QCOW2/VMDK).
 - `unisonos-iso-<version>/` — Autoinstall seed (user-data/meta-data), models manifest, metadata for ISO baking.
+- `unisonos-autoinstall-seed-<version>.iso` — NoCloud seed ISO (attach as secondary CD or combine with Ubuntu Server ISO).
 - Version defaults to `git describe --tags --always` unless `VERSION` env is set; `MODEL_FLAVOR` selects model profile (`images/models.yaml`).
 
 ## Make Targets
