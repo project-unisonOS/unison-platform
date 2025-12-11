@@ -39,19 +39,22 @@ jobs:
 
       - name: Build and push platform image (optional)
         if: github.event_name == 'push'
+        env:
+          IMAGE: ghcr.io/${{ github.repository_owner }}/unison-platform:${{ github.ref_name }}
         run: |
-          docker build -t ghcr.io/${{ github.repository }}/unison-platform:${{ github.ref_name }} .
-          COSIGN_EXPERIMENTAL=1 cosign sign --yes ghcr.io/${{ github.repository }}/unison-platform:${{ github.ref_name }}
-          docker push ghcr.io/${{ github.repository }}/unison-platform:${{ github.ref_name }}
+          IMAGE_LOWER=$(echo "$IMAGE" | tr '[:upper:]' '[:lower:]')
+          docker build -t "$IMAGE_LOWER" .
+          COSIGN_EXPERIMENTAL=1 cosign sign --yes "$IMAGE_LOWER"
+          docker push "$IMAGE_LOWER"
 
       - name: Verify images signed (keyless)
         env:
           COSIGN_EXPERIMENTAL: "1"
         run: |
           cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp "https://github.com/${{ github.repository }}" \
-            ghcr.io/${{ github.repository }}/unisonos-wsl:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/unisonos-wsl:${{ github.ref_name }}
           cosign verify --certificate-oidc-issuer https://token.actions.githubusercontent.com --certificate-identity-regexp "https://github.com/${{ github.repository }}" \
-            ghcr.io/${{ github.repository }}/unisonos-vm:${{ github.ref_name }}
+            ghcr.io/${{ github.repository_owner }}/unisonos-vm:${{ github.ref_name }}
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
