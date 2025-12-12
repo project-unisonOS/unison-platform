@@ -207,25 +207,36 @@ jobs:
   qa-smoke:
     runs-on: ubuntu-latest
     needs: build
-    if: ${{ hashFiles('docker-compose.prod.yml') != '' && hashFiles('qa/**') != '' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Detect QA smoke assets
+        id: qa_assets
+        shell: bash
+        run: |
+          if [[ -f docker-compose.prod.yml ]] && [[ -d qa ]] && compgen -G "qa/**" > /dev/null; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Start compose stack (prod)
+        if: ${{ steps.qa_assets.outputs.run == 'true' }}
         run: |
           docker compose -f docker-compose.prod.yml up -d --wait
 
       - name: Run QA smoke
+        if: ${{ steps.qa_assets.outputs.run == 'true' }}
         env:
           TARGET_HOST: http://localhost
         run: |
           python -m pytest qa -v --tb=short --color=yes
 
       - name: Logs on failure
-        if: failure()
+        if: ${{ failure() && steps.qa_assets.outputs.run == 'true' }}
         run: docker compose -f docker-compose.prod.yml logs --tail=200
 
       - name: Teardown
-        if: always()
+        if: ${{ always() && steps.qa_assets.outputs.run == 'true' }}
         run: docker compose -f docker-compose.prod.yml down -v --remove-orphans
