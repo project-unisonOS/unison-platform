@@ -12,6 +12,14 @@ on:
         required: false
         type: string
         default: "8080"
+      dockerfile:
+        required: false
+        type: string
+        default: Dockerfile
+      context:
+        required: false
+        type: string
+        default: .
 
 permissions:
   contents: read
@@ -63,6 +71,7 @@ jobs:
               echo "type=raw,value=latest"
               echo "type=raw,value=v${MAJOR}.${MINOR}"
               echo "type=raw,value=v${MAJOR}"
+              echo "type=raw,value=${SHA}"
             } > "${TAG_FILE}"
           elif [[ "${REF}" == refs/heads/release/* ]]; then
             # Release branch beta: release/x.y -> vX.Y.0-beta.<run>
@@ -74,6 +83,7 @@ jobs:
             {
               echo "type=raw,value=${VERSION}"
               echo "type=raw,value=${VERSION}-run${GITHUB_RUN_ATTEMPT}"
+              echo "type=raw,value=${SHA}"
             } > "${TAG_FILE}"
           else
             # Default to nightly edge off main and other branches
@@ -84,6 +94,7 @@ jobs:
             {
               echo "type=raw,value=${VERSION}"
               echo "type=sha,prefix=${GITHUB_REF_NAME:-main}-"
+              echo "type=raw,value=${SHA}"
             } > "${TAG_FILE}"
           fi
 
@@ -112,7 +123,8 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
@@ -195,6 +207,7 @@ jobs:
   qa-smoke:
     runs-on: ubuntu-latest
     needs: build
+    if: ${{ hashFiles('docker-compose.prod.yml') != '' && hashFiles('qa/**') != '' }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
