@@ -87,6 +87,13 @@ sudo unisonctl status
 
 **See [docs/deployment/ubuntu-native.md](docs/deployment/ubuntu-native.md) for complete native installation guide.**
 
+### Developer Images (WSL2 / VM / Bare Metal)
+
+Platform images are delivered as GitHub Release assets (not GHCR). Start here:
+
+- Install guide: `docs/install.md`
+- Release strategy (including `latest-*` tags): `docs/release-strategy.md`
+
 ---
 
 ### Prerequisites
