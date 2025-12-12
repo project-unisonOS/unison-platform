@@ -68,7 +68,7 @@ jobs:
             images/out/unisonos-autoinstall-seed-${{ github.ref_name }}.iso
 
       - name: Publish GitHub Release assets
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2.5.0
         with:
           files: |
             images/out/unisonos-wsl-${{ github.ref_name }}*.tar.gz

@@ -54,18 +54,21 @@ jobs:
         id: version
         run: |
           REF="${GITHUB_REF}"
-          TODAY=$(date -u +%Y%m%d)
-          SHA=${GITHUB_SHA::7}
-          TAG_FILE=tags.txt
+          TODAY="$(date -u +%Y%m%d)"
+          SHA="${GITHUB_SHA::7}"
+          TAG_FILE="tags.txt"
+          
+          write_output() {
+            echo "$1" >> "$GITHUB_OUTPUT"
+          }
 
           if [[ "${REF}" == refs/tags/v* ]]; then
             # Stable release tag: vX.Y.Z
             VERSION="${REF#refs/tags/}"
-            MAJOR="${VERSION#v}"; MAJOR="${MAJOR%%.*}"
-            MINOR="${VERSION#v${MAJOR}.}"; MINOR="${MINOR%%.*}"
+            IFS='.' read -r MAJOR MINOR _PATCH <<< "${VERSION#v}"
             CHANNEL="stable"
-            echo "semver=${VERSION}" >> $GITHUB_OUTPUT
-            echo "channel=${CHANNEL}" >> $GITHUB_OUTPUT
+            write_output "semver=${VERSION}"
+            write_output "channel=${CHANNEL}"
             {
               echo "type=raw,value=${VERSION}"
               echo "type=raw,value=latest"
@@ -78,8 +81,8 @@ jobs:
             BASE="${REF#refs/heads/release/}"
             VERSION="v${BASE}.0-beta.${GITHUB_RUN_NUMBER}"
             CHANNEL="beta"
-            echo "semver=${VERSION}" >> $GITHUB_OUTPUT
-            echo "channel=${CHANNEL}" >> $GITHUB_OUTPUT
+            write_output "semver=${VERSION}"
+            write_output "channel=${CHANNEL}"
             {
               echo "type=raw,value=${VERSION}"
               echo "type=raw,value=${VERSION}-run${GITHUB_RUN_ATTEMPT}"
@@ -89,8 +92,8 @@ jobs:
             # Default to nightly edge off main and other branches
             VERSION="edge-${GITHUB_REF_NAME:-main}-${TODAY}"
             CHANNEL="nightly"
-            echo "semver=${VERSION}" >> $GITHUB_OUTPUT
-            echo "channel=${CHANNEL}" >> $GITHUB_OUTPUT
+            write_output "semver=${VERSION}"
+            write_output "channel=${CHANNEL}"
             {
               echo "type=raw,value=${VERSION}"
               echo "type=sha,prefix=${GITHUB_REF_NAME:-main}-"
@@ -98,11 +101,13 @@ jobs:
             } > "${TAG_FILE}"
           fi
 
-          echo "sha=${SHA}" >> $GITHUB_OUTPUT
-          echo "domain=${{ inputs.domain }}" >> $GITHUB_OUTPUT
-          echo "tags<<EOF" >> $GITHUB_OUTPUT
-          cat "${TAG_FILE}" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "sha=${SHA}"
+            echo "domain=${{ inputs.domain }}"
+            echo "tags<<EOF"
+            cat "${TAG_FILE}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata
         id: meta
