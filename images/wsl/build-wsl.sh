@@ -9,7 +9,7 @@ FLAVOR="${MODEL_FLAVOR:-default}"
 UBUNTU_TAG="${UBUNTU_TAG:-24.04}"
 
 ARTIFACT_DIR="${OUT_ROOT}/unisonos-wsl-${VERSION}"
-TARBALL="${OUT_ROOT}/unisonos-wsl-${VERSION}.tar.gz"
+WSL_DISTRO_TARBALL="${OUT_ROOT}/unisonos-wsl2-dev-${VERSION}.tar.gz"
 ROOTFS_TARBALL="${OUT_ROOT}/unisonos-wsl-rootfs-${VERSION}.tar.gz"
 
 mkdir -p "${ARTIFACT_DIR}"
@@ -90,9 +90,7 @@ DOC
 }
 
 package_artifact() {
-  rm -f "${TARBALL}"
-  (cd "${OUT_ROOT}" && tar -czf "${TARBALL##${OUT_ROOT}/}" "$(basename "${ARTIFACT_DIR}")")
-  echo "WSL bundle created at ${TARBALL}"
+  echo "WSL bundle directory created at ${ARTIFACT_DIR}"
 }
 
 build_rootfs_tarball() {
@@ -109,8 +107,48 @@ build_rootfs_tarball() {
   echo "WSL rootfs tarball created at ${ROOTFS_TARBALL}"
 }
 
+build_wsl_distro_tarball() {
+  if [ ! -f "${ROOTFS_TARBALL}" ]; then
+    echo "Rootfs tarball not found; cannot build WSL distro tarball." >&2
+    return 1
+  fi
+
+  local tmp_root
+  tmp_root="$(mktemp -d)"
+  trap 'rm -rf "${tmp_root}"' EXIT
+
+  echo "Assembling UnisonOS WSL distro tarball..."
+  mkdir -p "${tmp_root}/opt/unisonos"
+  tar -xzf "${ROOTFS_TARBALL}" -C "${tmp_root}"
+
+  # Embed the platform bundle for first-run setup.
+  cp -R "${ARTIFACT_DIR}/bundle" "${tmp_root}/opt/unisonos/bundle"
+  cp "${ARTIFACT_DIR}/metadata.json" "${tmp_root}/opt/unisonos/metadata.json"
+
+  cat > "${tmp_root}/opt/unisonos/README.txt" <<'DOC'
+UnisonOS (WSL2 Developer Image)
+==============================
+
+This WSL distro contains a Unison platform bundle at:
+  /opt/unisonos/bundle
+
+Next steps (inside WSL):
+  1) Ensure Docker is available (Docker Desktop integration recommended).
+  2) Copy env template:
+       cp /opt/unisonos/bundle/.env.example /opt/unisonos/bundle/.env
+  3) Start the platform:
+       docker compose -f /opt/unisonos/bundle/docker-compose.prod.yml up -d
+
+DOC
+
+  rm -f "${WSL_DISTRO_TARBALL}"
+  (cd "${tmp_root}" && tar -czf "${WSL_DISTRO_TARBALL}" .)
+  echo "WSL distro tarball created at ${WSL_DISTRO_TARBALL}"
+}
+
 copy_platform_bundle
 render_models_manifest
 write_metadata
 package_artifact
 build_rootfs_tarball
+build_wsl_distro_tarball

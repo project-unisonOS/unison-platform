@@ -19,6 +19,34 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Determine release target
+        id: target
+        shell: bash
+        run: |
+          set -euo pipefail
+          TAG="${GITHUB_REF_NAME}"
+          SUFFIX="${TAG##*-}"
+
+          case "${SUFFIX}" in
+            wsl|wsl2)
+              TARGET="wsl2"
+              ;;
+            vm|linux-vm)
+              TARGET="linux-vm"
+              ;;
+            metal|bare-metal|baremetal)
+              TARGET="bare-metal"
+              ;;
+            *)
+              echo "Unsupported tag suffix '${SUFFIX}'." >&2
+              echo "Expected tag to end with one of: -wsl2, -linux-vm, -bare-metal" >&2
+              exit 1
+              ;;
+          esac
+
+          echo "target=${TARGET}" >> "$GITHUB_OUTPUT"
+          echo "docs_root=https://project-unisonos.github.io/unison-platform" >> "$GITHUB_OUTPUT"
+
       - name: Install tooling
         run: |
           sudo apt-get update
@@ -31,7 +59,50 @@ jobs:
         env:
           VERSION: ${{ github.ref_name }}
         run: |
-          make image-wsl image-vm image-iso
+          case "${{ steps.target.outputs.target }}" in
+            wsl2) make image-wsl ;;
+            linux-vm) make image-vm ;;
+            bare-metal) make image-iso ;;
+          esac
+
+      - name: Prepare canonical release assets
+        shell: bash
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          rm -rf release-assets
+          mkdir -p release-assets
+
+          case "${{ steps.target.outputs.target }}" in
+            wsl2)
+              src="images/out/unisonos-wsl2-dev-${VERSION}.tar.gz"
+              test -f "${src}"
+              cp "${src}" "release-assets/unisonos-wsl2-dev.tar.gz"
+              ;;
+            linux-vm)
+              base="images/out/unisonos-vm-${VERSION}"
+              cp "${base}/unisonos-vm-${VERSION}.qcow2" "release-assets/unisonos-linux-vm-dev.qcow2"
+              if [ -f "${base}/unisonos-vm-${VERSION}.vmdk" ]; then
+                cp "${base}/unisonos-vm-${VERSION}.vmdk" "release-assets/unisonos-linux-vm-dev.vmdk"
+              fi
+              ;;
+            bare-metal)
+              src="images/out/unisonos-autoinstall-seed-${VERSION}.iso"
+              test -f "${src}"
+              cp "${src}" "release-assets/unisonos-bare-metal.iso"
+              ;;
+          esac
+
+      - name: Render release notes
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 scripts/render_platform_release_notes.py \
+            --target "${{ steps.target.outputs.target }}" \
+            --docs-root "${{ steps.target.outputs.docs_root }}" \
+            --template ".github/platform-release-notes-template.md" \
+            --out "RELEASE_NOTES.md"
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -61,23 +132,12 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: unison-platform-${{ github.ref_name }}-artifacts
-          path: |
-            images/out/unisonos-wsl-${{ github.ref_name }}*.tar.gz
-            images/out/unisonos-vm-${{ github.ref_name }}/**
-            images/out/unisonos-iso-${{ github.ref_name }}/**
-            images/out/unisonos-autoinstall-seed-${{ github.ref_name }}.iso
+          path: release-assets/*
 
       - name: Publish GitHub Release assets
         uses: softprops/action-gh-release@v2.5.0
         with:
-          files: |
-            images/out/unisonos-wsl-${{ github.ref_name }}*.tar.gz
-            images/out/unisonos-vm-${{ github.ref_name }}/unisonos-vm-${{ github.ref_name }}.qcow2
-            images/out/unisonos-vm-${{ github.ref_name }}/unisonos-vm-${{ github.ref_name }}.vmdk
-            images/out/unisonos-vm-${{ github.ref_name }}/metadata.json
-            images/out/unisonos-iso-${{ github.ref_name }}/autoinstall/user-data
-            images/out/unisonos-iso-${{ github.ref_name }}/autoinstall/meta-data
-            images/out/unisonos-iso-${{ github.ref_name }}/autoinstall/models.json
-            images/out/unisonos-autoinstall-seed-${{ github.ref_name }}.iso
+          body_path: RELEASE_NOTES.md
+          files: release-assets/*
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
