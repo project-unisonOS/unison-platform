@@ -22,9 +22,7 @@ Jump to:
 ## Windows + WSL2
 
 **For:** Developers on Windows 11/10 who want a fast local dev environment via WSL2.  
-**Not for:** Linux VM users, bare-metal installs.
-
-**Download:** `unisonos-wsl2-dev.tar.gz` from the appropriate GitHub Release.
+**Download:** [`unisonos-wsl2-dev.tar.gz`](https://github.com/project-unisonOS/unison-platform/releases/download/v0.0.0-test-wsl/unisonos-wsl2-dev.tar.gz)
 
 **Prereqs**
 
@@ -49,22 +47,10 @@ wsl --import UnisonOS `
 wsl -d UnisonOS
 ```
 
-**What you get**
-
-- A WSL2 Linux environment prepared for running the Unison platform bundle.
-
-**What you do NOT get**
-
-- A full Windows-native installer.
-- A VM image.
-- A bare-metal installer.
-
 ## Linux VM
 
 **For:** Developers on Linux/macOS/Windows who want an isolated VM-based dev environment.  
-**Not for:** WSL2 installs, bare-metal installs.
-
-**Download:** `unisonos-linux-vm-dev.qcow2` (and optionally `unisonos-linux-vm-dev.vmdk`) from the appropriate GitHub Release.
+**Download:** [`unisonos-linux-vm-dev.qcow2`](https://github.com/project-unisonOS/unison-platform/releases/download/v0.0.0-test-vm/unisonos-linux-vm-dev.qcow2) (optionally [`unisonos-linux-vm-dev.vmdk`](https://github.com/project-unisonOS/unison-platform/releases/download/v0.0.0-test-vm/unisonos-linux-vm-dev.vmdk))
 
 **Prereqs**
 
@@ -81,21 +67,10 @@ qemu-system-x86_64 \
   -display none -serial mon:stdio
 ```
 
-**What you get**
-
-- A VM disk image you can boot and iterate on.
-
-**What you do NOT get**
-
-- A WSL2 distro import tarball.
-- An installer ISO intended for bare metal.
-
 ## Bare Metal
 
 **For:** Developers/operators installing UnisonOS onto dedicated hardware.  
-**Not for:** WSL2 installs, VM-based installs.
-
-**Download:** `unisonos-bare-metal.iso` from the appropriate GitHub Release.
+**Download:** [`unisonos-bare-metal.iso`](https://github.com/project-unisonOS/unison-platform/releases/download/v0.0.0-test-metal/unisonos-bare-metal.iso)
 
 **Prereqs**
 
@@ -118,4 +93,3 @@ qemu-system-x86_64 \
 
 - A WSL2 distro import tarball.
 - A VM disk image.
-
