@@ -1,0 +1,23 @@
+{
+  "schema_version": "unison.platform.modelpack.profile.v1",
+  "profile": "alpha/default",
+  "description": "Alpha default (recommended): Qwen for interaction + planner; requires speech pack for ASR/TTS.",
+  "defaults": {
+    "inference_provider": "ollama",
+    "interaction_model": "qwen2.5:1.5b",
+    "planner_provider": "ollama",
+    "planner_model": "qwen2.5:1.5b"
+  },
+  "required_model_packs": [
+    "unison.phase1.1.speech@0.1.1"
+  ],
+  "ollama_models": [
+    "qwen2.5:1.5b"
+  ],
+  "requirements": {
+    "disk_gb_min": 20,
+    "ram_gb_min": 8,
+    "notes": "Qwen + speech pack (faster-whisper + piper). CPU-only supported; GPU optional."
+  }
+}
+

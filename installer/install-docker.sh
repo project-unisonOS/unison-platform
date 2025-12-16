@@ -16,4 +16,8 @@ write_systemd_unit
 pull_images
 start_stack
 
+if [ -x "${PREFIX}/installer/ensure-models.sh" ]; then
+  "${PREFIX}/installer/ensure-models.sh" || true
+fi
+
 echo "Installation complete. Edit ${ENV_FILE} for secrets and rerun: systemctl restart unison-platform"

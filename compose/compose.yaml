@@ -399,7 +399,7 @@ services:
       NATS_HOST: nats
       AUTH_URL: http://auth:8083
       UNISON_INFERENCE_PROVIDER: "ollama"
-      UNISON_INFERENCE_MODEL: "llama3.2"
+      UNISON_INFERENCE_MODEL: "qwen2.5:1.5b"
     depends_on:
       nats:
         condition: service_healthy

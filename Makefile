@@ -2,7 +2,7 @@
 # Provides one-command orchestration for the entire Unison stack
 
 .PHONY: help up down logs test-int pin clean status observability dev prod
-.PHONY: image-wsl image-vm image-iso qa-smoke
+.PHONY: image-wsl image-vm image-iso baremetal-iso linux-vm qa-smoke
 
 # Default environment
 ENV ?= dev
@@ -207,11 +207,24 @@ image-wsl: ## Build WSL rootfs/script (scaffolding)
 
 image-vm: ## Build VM images (QCOW2/VMDK) (scaffolding)
 	@echo "$(BLUE)Building VM artifacts (placeholder)...$(RESET)"
-	@bash images/vm/build-vm.sh
+	@echo "$(YELLOW)Deprecated: use 'make linux-vm' for evaluator-ready images.$(RESET)"
+	@bash images/vm/scripts/build-vm-qcow2.sh
 
 image-iso: ## Build autoinstall ISO (scaffolding)
 	@echo "$(BLUE)Building ISO artifact (placeholder)...$(RESET)"
 	@bash images/iso/build-iso.sh
+
+baremetal-iso: ## Build full bare-metal installer ISO (autoinstall)
+	@echo "$(BLUE)Building bare-metal installer ISO...$(RESET)"
+	@bash images/baremetal/scripts/build-installer-iso.sh
+
+linux-vm: ## Build full Linux VM disk image (QCOW2, optional VMDK)
+	@echo "$(BLUE)Building Linux VM QCOW2...$(RESET)"
+	@bash images/vm/scripts/build-vm-qcow2.sh
+	@if [ "$${BUILD_VMDK:-}" = "1" ] || [ "$${BUILD_VMDK:-}" = "true" ]; then \
+		echo "$(BLUE)Building Linux VM VMDK...$(RESET)"; \
+		bash images/vm/scripts/build-vm-vmdk.sh; \
+	fi
 
 qa-smoke: ## Run platform smoke tests (scaffolding)
 	@echo "$(BLUE)Running platform smoke tests...$(RESET)"

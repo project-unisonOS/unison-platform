@@ -29,6 +29,12 @@ copy_bundle() {
   cp "${COMPOSE_FILE}" "${PREFIX}/docker-compose.yml"
   cp -r config "${PREFIX}/config"
   cp -r compose "${PREFIX}/compose"
+  if [ -d "./model-packs" ]; then
+    cp -r model-packs "${PREFIX}/model-packs"
+  fi
+  if [ -d "./installer" ]; then
+    cp -r installer "${PREFIX}/installer"
+  fi
   mkdir -p "${PREFIX}/scripts"
   if [ -f "./scripts/health-check.sh" ]; then
     cp ./scripts/health-check.sh "${PREFIX}/scripts/"

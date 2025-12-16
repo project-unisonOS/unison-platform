@@ -25,6 +25,13 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${GITHUB_REF_NAME}"
+          # Alpha tags are a single bundle release (WSL2 + VM + bare metal).
+          if [[ "${TAG}" == *"-alpha."* ]]; then
+            echo "target=alpha-bundle" >> "$GITHUB_OUTPUT"
+            echo "docs_root=https://project-unisonos.github.io" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
           SUFFIX="${TAG##*-}"
 
           case "${SUFFIX}" in
@@ -40,6 +47,7 @@ jobs:
             *)
               echo "Unsupported tag suffix '${SUFFIX}'." >&2
               echo "Expected tag to end with one of: -wsl2, -linux-vm, -bare-metal" >&2
+              echo "Or use an alpha tag like: v0.5.0-alpha.1" >&2
               exit 1
               ;;
           esac
@@ -50,7 +58,7 @@ jobs:
       - name: Install tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-utils xorriso python3-yaml
+          sudo apt-get install -y qemu-utils qemu-system-x86 xorriso python3-yaml
           COSIGN_VERSION="v2.2.4"
           curl -sSfL "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" -o /tmp/cosign
           sudo install -m 0755 /tmp/cosign /usr/local/bin/cosign
@@ -60,9 +68,10 @@ jobs:
           VERSION: ${{ github.ref_name }}
         run: |
           case "${{ steps.target.outputs.target }}" in
+            alpha-bundle) VERSION="${{ github.ref_name }}" ./scripts/stage_release_alpha_assets.sh ;;
             wsl2) make image-wsl ;;
-            linux-vm) make image-vm ;;
-            bare-metal) make image-iso ;;
+            linux-vm) make linux-vm ;;
+            bare-metal) make baremetal-iso ;;
           esac
 
       - name: Prepare canonical release assets
@@ -75,34 +84,63 @@ jobs:
           mkdir -p release-assets
 
           case "${{ steps.target.outputs.target }}" in
+            alpha-bundle)
+              src_dir="dist/${VERSION}"
+              test -d "${src_dir}"
+              cp "${src_dir}"/* release-assets/
+              ;;
             wsl2)
               src="images/out/unisonos-wsl2-dev-${VERSION}.tar.gz"
               test -f "${src}"
               cp "${src}" "release-assets/unisonos-wsl2-dev.tar.gz"
               ;;
             linux-vm)
-              base="images/out/unisonos-vm-${VERSION}"
-              cp "${base}/unisonos-vm-${VERSION}.qcow2" "release-assets/unisonos-linux-vm-dev.qcow2"
-              if [ -f "${base}/unisonos-vm-${VERSION}.vmdk" ]; then
-                cp "${base}/unisonos-vm-${VERSION}.vmdk" "release-assets/unisonos-linux-vm-dev.vmdk"
+              src="images/out/unisonos-linux-vm-${VERSION}.qcow2"
+              test -f "${src}"
+              cp "${src}" "release-assets/unisonos-linux-vm-${VERSION}.qcow2"
+              if [ -f "images/out/unisonos-linux-vm-${VERSION}.vmdk" ]; then
+                cp "images/out/unisonos-linux-vm-${VERSION}.vmdk" "release-assets/unisonos-linux-vm-${VERSION}.vmdk"
               fi
               ;;
             bare-metal)
-              src="images/out/unisonos-autoinstall-seed-${VERSION}.iso"
+              src="images/out/unisonos-baremetal-installer-${VERSION}.iso"
               test -f "${src}"
-              cp "${src}" "release-assets/unisonos-bare-metal.iso"
+              cp "${src}" "release-assets/unisonos-baremetal-${VERSION}.iso"
               ;;
           esac
 
-      - name: Render release notes
+      - name: Safeguard artifact sizes (alpha + targets)
         shell: bash
         run: |
           set -euo pipefail
-          python3 scripts/render_platform_release_notes.py \
-            --target "${{ steps.target.outputs.target }}" \
-            --docs-root "${{ steps.target.outputs.docs_root }}" \
-            --template ".github/platform-release-notes-template.md" \
-            --out "RELEASE_NOTES.md"
+          if [ -f release-assets/unisonos-baremetal-${{ github.ref_name }}.iso ]; then
+            bytes="$(stat -c%s release-assets/unisonos-baremetal-${{ github.ref_name }}.iso)"
+            test "${bytes}" -gt 1000000000
+          fi
+          if [ -f release-assets/unisonos-linux-vm-${{ github.ref_name }}.qcow2 ]; then
+            bytes="$(stat -c%s release-assets/unisonos-linux-vm-${{ github.ref_name }}.qcow2)"
+            test "${bytes}" -gt 700000000
+          fi
+
+      - name: Render release notes
+        shell: bash
+        env:
+          VERSION: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          if [[ "${{ steps.target.outputs.target }}" == "alpha-bundle" ]]; then
+            python3 scripts/render_alpha_release_notes.py \
+              --version "${VERSION}" \
+              --assets-dir "release-assets" \
+              --template "release-notes/alpha.md" \
+              --out "RELEASE_NOTES.md"
+          else
+            python3 scripts/render_platform_release_notes.py \
+              --target "${{ steps.target.outputs.target }}" \
+              --docs-root "${{ steps.target.outputs.docs_root }}" \
+              --template ".github/platform-release-notes-template.md" \
+              --out "RELEASE_NOTES.md"
+          fi
 
       - name: Login to GHCR
         uses: docker/login-action@v3
@@ -139,5 +177,7 @@ jobs:
         with:
           body_path: RELEASE_NOTES.md
           files: release-assets/*
+          draft: false
+          prerelease: ${{ steps.target.outputs.target == 'alpha-bundle' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -1,8 +1,8 @@
 # Default model manifest for image builds
 default:
   provider: ollama
-  text_model: qwen2.5
-  multimodal_model: qwen2.5
+  text_model: qwen2.5:1.5b
+  multimodal_model: qwen2.5:1.5b
   preload: true
 flavors:
   light:

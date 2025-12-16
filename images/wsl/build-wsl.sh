@@ -113,9 +113,8 @@ build_wsl_distro_tarball() {
     return 1
   fi
 
-  local tmp_root
   tmp_root="$(mktemp -d)"
-  trap 'rm -rf "${tmp_root}"' EXIT
+  trap 'rm -rf "${tmp_root:-}"' EXIT
 
   echo "Assembling UnisonOS WSL distro tarball..."
   mkdir -p "${tmp_root}/opt/unisonos"

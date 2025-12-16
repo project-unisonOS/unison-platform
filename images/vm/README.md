@@ -1,13 +1,44 @@
-# VM Targets (QCOW2 / VMDK)
+# Linux VM Image (QCOW2 / VMDK)
 
-Goal: build VM images for common hypervisors (QEMU/Proxmox, VMware) using Ubuntu cloud images as base.
+This directory builds evaluator-ready **bootable VM disk images** that contain:
 
-Planned steps:
-- Use Packer (or equivalent) to consume Ubuntu cloud image.
-- Provision with Docker, platform Compose, Ollama/local models, and systemd units to start Unison on boot.
-- Output: `unisonos-vm-qcow2-<version>.img` and `unisonos-vm-vmdk-<version>.vmdk`.
-- Template: `packer.pkr.hcl` (qemu builder against cloud image) + `provision.sh` placeholder to install platform.
+- Ubuntu LTS (currently 24.04 cloud image as base)
+- Docker + Compose plugin installed
+- Unison platform bundle installed under `/opt/unison-platform`
+- `unison-platform.service` enabled to auto-start the stack on boot
 
-Build entrypoint: `make image-vm` (calls `images/vm/build-vm.sh`), writes bundle under `images/out/unisonos-vm-<version>/`.
+## Outputs
 
-Defaults: Ubuntu 24.04 cloud image (override with `UBUNTU_VERSION=22.04` if needed).
+- `unison-platform/images/out/unisonos-linux-vm-${VERSION}.qcow2`
+- (Optional) `unison-platform/images/out/unisonos-linux-vm-${VERSION}.vmdk`
+
+## Requirements
+
+- `qemu-img` (package: `qemu-utils`)
+- `virt-customize` (package: `libguestfs-tools`)
+- `curl`
+
+On Ubuntu/Debian:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y qemu-utils libguestfs-tools curl
+```
+
+## Build
+
+```bash
+cd unison-platform
+VERSION=v0.5.0-alpha.1 make linux-vm
+```
+
+This uses `images/vm/scripts/build-vm-qcow2.sh` and downloads the Ubuntu cloud image into `images/cache/`.
+
+## Login / access
+
+- Default user: `unison`
+- Default password: `unison` (alpha evaluator default; change immediately for real installs)
+- Renderer UI (after first boot + services start): `http://<vm-ip>:8092`
+
+Networking defaults to DHCP.
+

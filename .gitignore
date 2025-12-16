@@ -43,3 +43,4 @@ out/
 
 # Image build artifacts
 images/out/
+images/cache/
