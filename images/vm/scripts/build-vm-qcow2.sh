@@ -21,7 +21,8 @@ should_use_cloudimg() {
   if [ "${VM_BUILD_MODE:-}" = "cloudimg" ]; then
     return 0
   fi
-  if [ ! -e /dev/kvm ]; then
+  # Some environments expose /dev/kvm but do not grant access to the runner user.
+  if [ ! -e /dev/kvm ] || [ ! -r /dev/kvm ] || [ ! -w /dev/kvm ]; then
     return 0
   fi
   return 1
