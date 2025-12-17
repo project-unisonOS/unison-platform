@@ -71,7 +71,8 @@ qemu-system-x86_64 \
 
 **For:** Developers/operators installing UnisonOS onto dedicated hardware.  
 **Download:** From the GitHub Release tag (example `v0.5.0-alpha.N`):
-- `unisonos-baremetal-v0.5.0-alpha.N.iso`
+- `unisonos-baremetal-v0.5.0-alpha.N.iso.part00` (and subsequent `part*`)
+- `unisonos-baremetal-v0.5.0-alpha.N.iso.REASSEMBLE.txt`
 - `SHA256SUMS-v0.5.0-alpha.N.txt`
 
 **Prereqs**
@@ -82,7 +83,9 @@ qemu-system-x86_64 \
 
 **Install (high-level)**
 
-1. Flash `unisonos-baremetal-v0.5.0-alpha.N.iso` to a USB drive.
+1. Reassemble the ISO:
+   - `cat unisonos-baremetal-v0.5.0-alpha.N.iso.part* > unisonos-baremetal-v0.5.0-alpha.N.iso`
+2. Flash `unisonos-baremetal-v0.5.0-alpha.N.iso` to a USB drive.
 2. Boot the target machine from USB.
 3. Follow the on-screen installer prompts.
 4. After install, reboot into the installed system.

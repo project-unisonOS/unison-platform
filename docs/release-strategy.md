@@ -48,7 +48,7 @@ Each platform image release should:
 - Publish assets with canonical, self-describing names:
   - `unisonos-wsl2-v0.5.0-alpha.N.tar.gz` (or `.zip`)
   - `unisonos-linux-vm-v0.5.0-alpha.N.qcow2` (and/or `.vmdk`)
-  - `unisonos-baremetal-v0.5.0-alpha.N.iso`
+  - `unisonos-baremetal-v0.5.0-alpha.N.iso.part00` (and subsequent `part*`, plus `...REASSEMBLE.txt`)
   - `unisonos-manifest-v0.5.0-alpha.N.json`
   - `SHA256SUMS-v0.5.0-alpha.N.txt`
 - Link to a single canonical install page:
