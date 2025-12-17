@@ -65,7 +65,7 @@ jobs:
       - name: Install tooling
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-utils qemu-system-x86 xorriso python3-yaml zstd
+          sudo apt-get install -y qemu-utils qemu-system-x86 xorriso python3-yaml
           COSIGN_VERSION="v2.2.4"
           curl -sSfL "https://github.com/sigstore/cosign/releases/download/${COSIGN_VERSION}/cosign-linux-amd64" -o /tmp/cosign
           sudo install -m 0755 /tmp/cosign /usr/local/bin/cosign
@@ -121,9 +121,13 @@ jobs:
         run: |
           set -euo pipefail
           VERSION="${{ inputs.tag || github.ref_name }}"
-          if [ -f "release-assets/unisonos-baremetal-${VERSION}.iso.zst" ]; then
-            bytes="$(stat -c%s "release-assets/unisonos-baremetal-${VERSION}.iso.zst")"
-            test "${bytes}" -gt 500000000
+          if [ -f "release-assets/unisonos-baremetal-${VERSION}.iso.part00" ]; then
+            test -f "release-assets/unisonos-baremetal-${VERSION}.iso.part01"
+            test -f "release-assets/unisonos-baremetal-${VERSION}.iso.REASSEMBLE.txt"
+            for p in release-assets/unisonos-baremetal-${VERSION}.iso.part*; do
+              bytes="$(stat -c%s "${p}")"
+              test "${bytes}" -lt 2147483648
+            done
           fi
           if [ -f "release-assets/unisonos-linux-vm-${VERSION}.qcow2" ]; then
             bytes="$(stat -c%s "release-assets/unisonos-linux-vm-${VERSION}.qcow2")"

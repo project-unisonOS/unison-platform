@@ -26,8 +26,9 @@ GitHub Release assets:
 {{ASSETS_BULLETS}}
 
 Bare-metal note:
-- The bare-metal installer is shipped as `unisonos-baremetal-{{VERSION}}.iso.zst` due to GitHub’s 2GB per-asset limit.
-- Decompress before flashing: `zstd -d unisonos-baremetal-{{VERSION}}.iso.zst -o unisonos-baremetal-{{VERSION}}.iso`
+- GitHub Releases limit individual assets to 2GB, so the bare-metal ISO is shipped as `unisonos-baremetal-{{VERSION}}.iso.part00`, `...part01`, etc.
+- Reassemble before flashing:
+  - `cat unisonos-baremetal-{{VERSION}}.iso.part* > unisonos-baremetal-{{VERSION}}.iso`
 
 Alpha evaluation guide:
 - https://project-unisonos.github.io/developers/evaluate-alpha/

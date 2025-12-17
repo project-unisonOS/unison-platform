@@ -55,18 +55,32 @@ if command -v xorriso >/dev/null 2>&1; then
   fi
 fi
 
-echo "[release-alpha] compressing bare-metal ISO for GitHub Releases (2GB asset limit)"
-if ! command -v zstd >/dev/null 2>&1; then
-  echo "[release-alpha] ERROR: zstd not installed (required to publish ISO within GitHub Releases limits)" >&2
-  exit 1
-fi
-ISO_ZST="${DIST}/unisonos-baremetal-${VERSION}.iso.zst"
-zstd -T0 -19 --no-progress -o "${ISO_ZST}" "${ISO_DST}"
-rm -f "${ISO_DST}"
-iso_zst_bytes="$(stat -c%s "${ISO_ZST}")"
-if [ "${iso_zst_bytes}" -gt 2147483648 ]; then
-  echo "[release-alpha] ERROR: compressed ISO is still too large for GitHub Releases (${iso_zst_bytes} bytes)" >&2
-  exit 1
+echo "[release-alpha] splitting bare-metal ISO for GitHub Releases (2GB asset limit)"
+ISO_MAX_BYTES=2147483648
+if [ "${iso_bytes}" -gt "${ISO_MAX_BYTES}" ]; then
+  ISO_PREFIX="${DIST}/unisonos-baremetal-${VERSION}.iso.part"
+  split -b 1900m -d -a 2 "${ISO_DST}" "${ISO_PREFIX}"
+  rm -f "${ISO_DST}"
+  cat > "${DIST}/unisonos-baremetal-${VERSION}.iso.REASSEMBLE.txt" <<EOF
+Reassemble:
+  cat unisonos-baremetal-${VERSION}.iso.part* > unisonos-baremetal-${VERSION}.iso
+
+Verify:
+  sha256sum -c SHA256SUMS-${VERSION}.txt
+EOF
+  part0="${ISO_PREFIX}00"
+  part1="${ISO_PREFIX}01"
+  test -f "${part0}"
+  test -f "${part1}"
+  for part in "${ISO_PREFIX}"*; do
+    pbytes="$(stat -c%s "${part}")"
+    if [ "${pbytes}" -gt "${ISO_MAX_BYTES}" ]; then
+      echo "[release-alpha] ERROR: ISO part too large for GitHub Releases: $(basename "${part}") (${pbytes} bytes)" >&2
+      exit 1
+    fi
+  done
+else
+  echo "[release-alpha] ISO is within GitHub Releases limit; keeping as single file"
 fi
 
 qcow_disk_bytes="$(stat -c%s "${QCOW_DST}")"
