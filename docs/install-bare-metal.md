@@ -14,6 +14,12 @@ Expected assets (for `v0.5.0-alpha.N`):
 - `unisonos-baremetal-v0.5.0-alpha.N.iso.REASSEMBLE.txt`
 - `SHA256SUMS-v0.5.0-alpha.N.txt`
 
+## Bare-metal ISO is split (GitHub 2GB limit)
+
+GitHub Releases limit individual assets to 2GB, so the bare-metal ISO is shipped as multiple parts (`.iso.part00`, `.iso.part01`, …). Reassemble before flashing:
+
+- `cat unisonos-baremetal-v0.5.0-alpha.N.iso.part* > unisonos-baremetal-v0.5.0-alpha.N.iso`
+
 ## Install
 
 1. Reassemble the ISO:
