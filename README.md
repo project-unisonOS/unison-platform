@@ -91,7 +91,10 @@ sudo unisonctl status
 
 Platform images are delivered as GitHub Release assets (not GHCR). Start here:
 
-- Install guide: `docs/install.md`
+- Install guide (choose one):
+  - `docs/install-wsl2.md`
+  - `docs/install-linux-vm.md`
+  - `docs/install-bare-metal.md`
 - Release strategy (including `latest-*` tags): `docs/release-strategy.md`
 
 ---
