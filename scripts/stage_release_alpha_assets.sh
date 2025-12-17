@@ -83,4 +83,15 @@ echo "[release-alpha] generating sha256 sums"
 SHA_DST="${DIST}/SHA256SUMS-${VERSION}.txt"
 (cd "${DIST}" && { ls -1 | LC_ALL=C sort | while read -r f; do [ "${f}" = "$(basename "${SHA_DST}")" ] && continue; sha256sum "${f}"; done; } > "$(basename "${SHA_DST}")")
 
+if [ "${CI:-}" = "true" ] || [ "${RELEASE_CLEANUP:-}" = "1" ]; then
+  echo "[release-alpha] CI cleanup: removing large intermediate files"
+  rm -rf "${ROOT_DIR}/images/cache" || true
+  rm -f "${OUT}/unisonos-baremetal-installer-${VERSION}.iso" || true
+  rm -f "${OUT}/unisonos-linux-vm-${VERSION}.qcow2" || true
+  rm -f "${OUT}/unisonos-linux-vm-${VERSION}.vmdk" || true
+  rm -f "${OUT}/unisonos-wsl2-dev-${VERSION}.tar.gz" || true
+  rm -f "${OUT}/unisonos-wsl-rootfs-${VERSION}.tar.gz" || true
+  rm -rf "${OUT}/unisonos-wsl-${VERSION}" || true
+fi
+
 echo "[release-alpha] done: ${DIST}"
