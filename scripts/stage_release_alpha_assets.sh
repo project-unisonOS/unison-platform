@@ -49,7 +49,7 @@ if [[ "$(basename "${ISO_DST}")" == *"seed"* ]] || [[ "$(basename "${ISO_DST}")"
   exit 1
 fi
 if command -v xorriso >/dev/null 2>&1; then
-  if ! xorriso -indev "${ISO_DST}" -find /casper/filesystem.squashfs -print -quit 2>/dev/null | rg -q "filesystem\\.squashfs"; then
+  if ! xorriso -indev "${ISO_DST}" -find /casper/filesystem.squashfs -print -quit 2>/dev/null | grep -q "filesystem.squashfs"; then
     echo "[release-alpha] ERROR: ISO missing /casper/filesystem.squashfs; likely not a full installer ISO" >&2
     exit 1
   fi
