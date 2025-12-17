@@ -56,7 +56,7 @@ if command -v xorriso >/dev/null 2>&1; then
 fi
 
 qcow_disk_bytes="$(stat -c%s "${QCOW_DST}")"
-qcow_virtual_bytes="$(qemu-img info "${QCOW_DST}" | awk -F'[()]' '/virtual size/ {gsub(/[^0-9]/,\"\",$2); print $2; exit}')"
+qcow_virtual_bytes="$(qemu-img info "${QCOW_DST}" | awk -F'[()]' '/virtual size/ {gsub(/[^0-9]/, "", $2); print $2; exit}')"
 if [ -z "${qcow_virtual_bytes}" ]; then
   echo "[release-alpha] ERROR: unable to read qcow2 virtual size" >&2
   exit 1
