@@ -4,17 +4,15 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 
 ## Build Outputs (images/out/)
 - `unisonos-wsl-<version>.tar.gz` — WSL bundle (compose, env template, models manifest).
-- `unisonos-vm-<version>/` — VM bundle with Packer stub, models manifest, metadata (targets QCOW2/VMDK).
-- `unisonos-iso-<version>/` — Autoinstall seed (user-data/meta-data), models manifest, metadata for ISO baking.
-- `unisonos-autoinstall-seed-<version>.iso` — NoCloud seed ISO (attach as secondary CD or combine with Ubuntu Server ISO).
+- `unisonos-linux-vm-<version>.qcow2` — Bootable Ubuntu VM disk image (built from Ubuntu cloud image; provisions UnisonOS on first boot).
+- `unisonos-baremetal-installer-<version>.iso` — Full Ubuntu Server installer ISO remastered with embedded autoinstall payload (not seed-only).
 - Version defaults to `git describe --tags --always` unless `VERSION` env is set; `MODEL_FLAVOR` selects model profile (`images/models.yaml`).
 - Default base OS: Ubuntu 24.04 (override with `UBUNTU_VERSION`/`UBUNTU_TAG` where applicable).
-- VM bundle includes `packer.pkr.hcl` (qemu builder) and `provision.sh` placeholder to install Docker + platform.
 
 ## Make Targets
 - `make image-wsl` — builds WSL tarball.
-- `make image-vm` — writes VM bundle directory.
-- `make image-iso` — writes autoinstall seed bundle.
+- `make linux-vm` — writes VM QCOW2 (and optional VMDK).
+- `make baremetal-iso` — writes the remastered installer ISO with embedded autoinstall payload.
 - `make qa-smoke` — runs platform health + inference smoke tests (used in CI).
 - `release.yml` workflow — on `v*` tags, installs tooling, builds images/seed ISO, uploads artifacts, and attaches them to GitHub Releases.
 
@@ -36,5 +34,5 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 ## Usage Notes
 - Before publishing artifacts, ensure secrets in `/etc/unison/platform.env` (or shipped `.env` template) are set.
 - For ISO: bake `images/out/unisonos-iso-<version>/autoinstall/*` into an Ubuntu Server ISO using `xorriso`/`mkisofs`; late-commands install platform and enable `unison-platform.service`.
-- For VM images: replace Packer stub with real qemu/vmware builders; emit QCOW2/VMDK named `unisonos-vm-<version>.<ext>`.
+- For VM images: the CI build path uses Ubuntu cloud images + libguestfs customization (no KVM required); the image provisions the platform on first boot via a systemd unit.
 - For WSL: distribute `unisonos-wsl-<version>.tar.gz`; extract, set env, run `docker compose -f bundle/docker-compose.prod.yml up -d`.

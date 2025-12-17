@@ -4,7 +4,7 @@ title: Platform Image Release Strategy
 
 # Platform Image Release Strategy
 
-UnisonOS platform images are delivered as **GitHub Release assets** in the `project-unisonOS/unison-platform` repository.
+UnisonOS platform artifacts are delivered as **GitHub Release assets** in the `project-unisonOS/unison-platform` repository.
 
 ## Goals
 
@@ -14,13 +14,11 @@ UnisonOS platform images are delivered as **GitHub Release assets** in the `proj
 
 ## Tagging model
 
-### Immutable, versioned tags (recommended)
+### Immutable, versioned tags (current)
 
-Use one tag per target. Examples:
+For `v0.5.0-alpha.N`, use **one tag** that publishes **all** evaluator artifacts. Example:
 
-- `vX.Y.Z-wsl2`
-- `vX.Y.Z-linux-vm`
-- `vX.Y.Z-bare-metal`
+- `v0.5.0-alpha.N` → WSL2 + Linux VM + bare metal + manifest + checksums
 
 These tags are **immutable** and should never be moved.
 
@@ -42,17 +40,16 @@ git tag -fa latest-wsl vX.Y.Z-wsl2 -m "Latest WSL2 developer image"
 git push -f origin latest-wsl
 ```
 
-## Release expectations
+## Release expectations (alpha)
 
 Each platform image release should:
 
-- Target **exactly one** install path (WSL2 OR VM OR bare metal).
+- Publish a single evaluator bundle release per tag.
 - Publish assets with canonical, self-describing names:
-  - `unisonos-wsl2-dev.tar.gz`
-  - `unisonos-linux-vm-dev.qcow2`
-  - `unisonos-bare-metal.iso`
+  - `unisonos-wsl2-v0.5.0-alpha.N.tar.gz` (or `.zip`)
+  - `unisonos-linux-vm-v0.5.0-alpha.N.qcow2` (and/or `.vmdk`)
+  - `unisonos-baremetal-v0.5.0-alpha.N.iso`
+  - `unisonos-manifest-v0.5.0-alpha.N.json`
+  - `SHA256SUMS-v0.5.0-alpha.N.txt`
 - Link to a single canonical install page:
-  - `https://project-unisonos.github.io/unison-platform/install#wsl2`
-  - `https://project-unisonos.github.io/unison-platform/install#linux-vm`
-  - `https://project-unisonos.github.io/unison-platform/install#bare-metal`
-
+  - `https://project-unisonos.github.io/developers/evaluate-alpha/`

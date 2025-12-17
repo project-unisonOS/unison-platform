@@ -44,6 +44,16 @@ if [ "${iso_bytes}" -lt 1000000000 ]; then
   echo "[release-alpha] ERROR: ISO too small (${iso_bytes} bytes) - expected full installer ISO" >&2
   exit 1
 fi
+if [[ "$(basename "${ISO_DST}")" == *"seed"* ]] || [[ "$(basename "${ISO_DST}")" == *"autoinstall-seed"* ]]; then
+  echo "[release-alpha] ERROR: ISO name indicates seed-only ISO: $(basename "${ISO_DST}")" >&2
+  exit 1
+fi
+if command -v xorriso >/dev/null 2>&1; then
+  if ! xorriso -indev "${ISO_DST}" -find /casper/filesystem.squashfs -print -quit 2>/dev/null | rg -q "filesystem\\.squashfs"; then
+    echo "[release-alpha] ERROR: ISO missing /casper/filesystem.squashfs; likely not a full installer ISO" >&2
+    exit 1
+  fi
+fi
 
 qcow_disk_bytes="$(stat -c%s "${QCOW_DST}")"
 qcow_virtual_bytes="$(qemu-img info "${QCOW_DST}" | awk -F'[()]' '/virtual size/ {gsub(/[^0-9]/,\"\",$2); print $2; exit}')"
@@ -51,12 +61,12 @@ if [ -z "${qcow_virtual_bytes}" ]; then
   echo "[release-alpha] ERROR: unable to read qcow2 virtual size" >&2
   exit 1
 fi
-if [ "${qcow_virtual_bytes}" -lt 8000000000 ]; then
+if [ "${qcow_virtual_bytes}" -lt 20000000000 ]; then
   echo "[release-alpha] ERROR: qcow2 virtual size too small (${qcow_virtual_bytes} bytes) - expected full VM disk" >&2
   exit 1
 fi
-if [ "${qcow_disk_bytes}" -lt 700000000 ]; then
-  echo "[release-alpha] ERROR: qcow2 disk size too small (${qcow_disk_bytes} bytes) - likely scaffold" >&2
+if [ "${qcow_disk_bytes}" -lt 200000000 ]; then
+  echo "[release-alpha] ERROR: qcow2 disk size too small (${qcow_disk_bytes} bytes) - likely incomplete build" >&2
   exit 1
 fi
 

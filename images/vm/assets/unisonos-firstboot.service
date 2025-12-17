@@ -1,0 +1,13 @@
+[Unit]
+Description=UnisonOS first-boot provisioning
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/unisonos-firstboot.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+

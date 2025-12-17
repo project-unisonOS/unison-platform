@@ -15,6 +15,18 @@ QCOW_OUT="${OUT_ROOT}/unisonos-linux-vm-${VERSION}.qcow2"
 
 mkdir -p "${OUT_ROOT}"
 
+should_use_cloudimg() {
+  # GitHub-hosted runners and many dev environments do not have KVM available.
+  # Our ISO+QEMU autoinstall path requires KVM (qemu -cpu host).
+  if [ "${VM_BUILD_MODE:-}" = "cloudimg" ]; then
+    return 0
+  fi
+  if [ ! -e /dev/kvm ]; then
+    return 0
+  fi
+  return 1
+}
+
 run_qemu_install() {
   local qcow="$1"
   local iso="$2"
@@ -64,6 +76,11 @@ run_in_docker() {
 }
 
 echo "[vm] version=${VERSION}"
+if should_use_cloudimg; then
+  echo "[vm] using cloud-image build path (no KVM required)"
+  exec bash "${ROOT_DIR}/images/vm/scripts/build-vm-cloudimg.sh"
+fi
+
 ensure_installer_iso
 
 if command -v qemu-system-x86_64 >/dev/null 2>&1; then
@@ -73,4 +90,3 @@ else
 fi
 
 echo "[vm] wrote ${QCOW_OUT}"
-

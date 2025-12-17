@@ -2,16 +2,12 @@
 title: Install UnisonOS (Developer Images)
 ---
 
-# Install UnisonOS (Developer Images)
+# Install UnisonOS (Release Artifacts)
 
-UnisonOS platform images are distributed as **GitHub Release assets** from:
-`https://github.com/project-unisonOS/unison-platform/releases`
+UnisonOS platform artifacts are distributed as **GitHub Release assets** from:
+`https://github.com/project-unisonOS/unison-platform/releases`.
 
-Each release targets **exactly one** installation path:
-
-- Windows + WSL2
-- Linux VM
-- Bare metal
+For `v0.5.0-alpha.N`, a **single tag** publishes **all** evaluator artifacts (WSL2 + Linux VM + bare metal) plus a manifest and checksums.
 
 Jump to:
 
@@ -22,7 +18,9 @@ Jump to:
 ## Windows + WSL2
 
 **For:** Developers on Windows 11/10 who want a fast local dev environment via WSL2.  
-**Download:** [`unisonos-wsl2-dev.tar.gz`](https://github.com/project-unisonOS/unison-platform/releases/download/v0.0.0-test-wsl/unisonos-wsl2-dev.tar.gz)
+**Download:** From the GitHub Release tag (example `v0.5.0-alpha.N`):
+- `unisonos-wsl2-v0.5.0-alpha.N.tar.gz`
+- `SHA256SUMS-v0.5.0-alpha.N.txt`
 
 **Prereqs**
 
@@ -40,7 +38,7 @@ wsl --install
 # 2) Import the UnisonOS WSL distro
 wsl --import UnisonOS `
   C:\\wsl\\unisonos `
-  .\\unisonos-wsl2-dev.tar.gz `
+  .\\unisonos-wsl2-v0.5.0-alpha.N.tar.gz `
   --version 2
 
 # 3) Launch
@@ -50,7 +48,9 @@ wsl -d UnisonOS
 ## Linux VM
 
 **For:** Developers on Linux/macOS/Windows who want an isolated VM-based dev environment.  
-**Download:** [`unisonos-linux-vm-dev.qcow2`](https://github.com/project-unisonOS/unison-platform/releases/download/v0.0.0-test-vm/unisonos-linux-vm-dev.qcow2) (optionally [`unisonos-linux-vm-dev.vmdk`](https://github.com/project-unisonOS/unison-platform/releases/download/v0.0.0-test-vm/unisonos-linux-vm-dev.vmdk))
+**Download:** From the GitHub Release tag (example `v0.5.0-alpha.N`):
+- `unisonos-linux-vm-v0.5.0-alpha.N.qcow2` (and/or `.vmdk`)
+- `SHA256SUMS-v0.5.0-alpha.N.txt`
 
 **Prereqs**
 
@@ -62,7 +62,7 @@ wsl -d UnisonOS
 ```bash
 qemu-system-x86_64 \
   -m 8192 -smp 4 \
-  -drive file=unisonos-linux-vm-dev.qcow2,format=qcow2 \
+  -drive file=unisonos-linux-vm-v0.5.0-alpha.N.qcow2,format=qcow2 \
   -nic user,model=virtio-net-pci \
   -display none -serial mon:stdio
 ```
@@ -70,7 +70,9 @@ qemu-system-x86_64 \
 ## Bare Metal
 
 **For:** Developers/operators installing UnisonOS onto dedicated hardware.  
-**Download:** [`unisonos-bare-metal.iso`](https://github.com/project-unisonOS/unison-platform/releases/download/v0.0.0-test-metal/unisonos-bare-metal.iso)
+**Download:** From the GitHub Release tag (example `v0.5.0-alpha.N`):
+- `unisonos-baremetal-v0.5.0-alpha.N.iso`
+- `SHA256SUMS-v0.5.0-alpha.N.txt`
 
 **Prereqs**
 
@@ -80,7 +82,7 @@ qemu-system-x86_64 \
 
 **Install (high-level)**
 
-1. Flash `unisonos-bare-metal.iso` to a USB drive.
+1. Flash `unisonos-baremetal-v0.5.0-alpha.N.iso` to a USB drive.
 2. Boot the target machine from USB.
 3. Follow the on-screen installer prompts.
 4. After install, reboot into the installed system.
