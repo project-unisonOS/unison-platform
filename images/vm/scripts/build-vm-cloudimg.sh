@@ -20,14 +20,21 @@ trap 'rm -rf "${WORKDIR}"' EXIT
 
 mkdir -p "${OUT_ROOT}" "${CACHE_DIR}"
 
+SUDO=""
+if [ "${EUID:-$(id -u)}" -ne 0 ]; then
+  SUDO="sudo"
+fi
+
 need_cmd() {
   command -v "$1" >/dev/null 2>&1 || { echo "missing $1" >&2; exit 127; }
 }
 
 need_cmd curl
 need_cmd qemu-img
-need_cmd virt-customize
-need_cmd virt-copy-in
+need_cmd qemu-nbd
+need_cmd lsblk
+need_cmd mount
+need_cmd umount
 
 echo "[vm/cloudimg] version=${VERSION}"
 echo "[vm/cloudimg] ubuntu_cloudimg_url=${UBUNTU_CLOUDIMG_URL}"
@@ -45,34 +52,51 @@ rm -f "${QCOW_OUT}"
 qemu-img convert -O qcow2 "${SRC_IMG}" "${QCOW_OUT}"
 qemu-img resize "${QCOW_OUT}" "${VM_DISK_GB}G" >/dev/null
 
-echo "[vm/cloudimg] installing base packages (docker, compose)..."
-virt-customize -a "${QCOW_OUT}" \
-  --install "ca-certificates,curl,docker.io,docker-compose-v2,cloud-init,openssh-server" \
-  --run-command "systemctl disable ssh || true"
+echo "[vm/cloudimg] mounting image via nbd to stage bundle..."
+NBD_DEV="${NBD_DEV:-/dev/nbd0}"
+MNT="${WORKDIR}/mnt"
+mkdir -p "${MNT}"
 
-echo "[vm/cloudimg] staging platform bundle..."
-STAGE="${WORKDIR}/bundle"
-mkdir -p "${STAGE}/opt/unison-platform"
-cp "${ROOT_DIR}/docker-compose.prod.yml" "${STAGE}/opt/unison-platform/docker-compose.yml"
-cp "${ROOT_DIR}/.env.template" "${STAGE}/opt/unison-platform/.env.template"
-cp -R "${ROOT_DIR}/config" "${STAGE}/opt/unison-platform/config"
-cp -R "${ROOT_DIR}/compose" "${STAGE}/opt/unison-platform/compose"
-cp -R "${ROOT_DIR}/installer" "${STAGE}/opt/unison-platform/installer"
-cp -R "${ROOT_DIR}/model-packs" "${STAGE}/opt/unison-platform/model-packs"
-mkdir -p "${STAGE}/opt/unison-platform/scripts"
-cp "${ROOT_DIR}/scripts/health-check.sh" "${STAGE}/opt/unison-platform/scripts/" || true
+cleanup_nbd() {
+  set +e
+  ${SUDO} umount "${MNT}" >/dev/null 2>&1 || true
+  ${SUDO} qemu-nbd --disconnect "${NBD_DEV}" >/dev/null 2>&1 || true
+}
+trap cleanup_nbd EXIT
 
-virt-copy-in -a "${QCOW_OUT}" "${STAGE}/opt" /
+${SUDO} modprobe nbd max_part=8 || true
+${SUDO} qemu-nbd --connect "${NBD_DEV}" "${QCOW_OUT}"
+${SUDO} partprobe "${NBD_DEV}" >/dev/null 2>&1 || true
+sleep 1
 
-echo "[vm/cloudimg] installing first-boot service..."
+root_part="$(${SUDO} lsblk -nrpo NAME,FSTYPE "${NBD_DEV}" | awk '$2=="ext4"{print $1}' | head -n 1)"
+if [ -z "${root_part}" ]; then
+  echo "[vm/cloudimg] ERROR: unable to locate ext4 root partition on ${NBD_DEV}" >&2
+  ${SUDO} lsblk "${NBD_DEV}" >&2 || true
+  exit 1
+fi
+
+${SUDO} mount "${root_part}" "${MNT}"
+
+${SUDO} mkdir -p "${MNT}/opt/unison-platform"
+${SUDO} cp "${ROOT_DIR}/docker-compose.prod.yml" "${MNT}/opt/unison-platform/docker-compose.yml"
+${SUDO} cp "${ROOT_DIR}/.env.template" "${MNT}/opt/unison-platform/.env.template"
+${SUDO} cp -R "${ROOT_DIR}/config" "${MNT}/opt/unison-platform/config"
+${SUDO} cp -R "${ROOT_DIR}/compose" "${MNT}/opt/unison-platform/compose"
+${SUDO} cp -R "${ROOT_DIR}/installer" "${MNT}/opt/unison-platform/installer"
+${SUDO} cp -R "${ROOT_DIR}/model-packs" "${MNT}/opt/unison-platform/model-packs"
+${SUDO} mkdir -p "${MNT}/opt/unison-platform/scripts"
+${SUDO} cp "${ROOT_DIR}/scripts/health-check.sh" "${MNT}/opt/unison-platform/scripts/" || true
+
 FIRSTBOOT_SERVICE="${ROOT_DIR}/images/vm/assets/unisonos-firstboot.service"
 FIRSTBOOT_SH="${ROOT_DIR}/images/vm/assets/unisonos-firstboot.sh"
-virt-customize -a "${QCOW_OUT}" \
-  --upload "${FIRSTBOOT_SERVICE}:/etc/systemd/system/unisonos-firstboot.service" \
-  --upload "${FIRSTBOOT_SH}:/usr/local/sbin/unisonos-firstboot.sh" \
-  --run-command "chmod +x /usr/local/sbin/unisonos-firstboot.sh" \
-  --run-command "mkdir -p /etc/systemd/system/multi-user.target.wants" \
-  --run-command "ln -sf /etc/systemd/system/unisonos-firstboot.service /etc/systemd/system/multi-user.target.wants/unisonos-firstboot.service"
+${SUDO} install -m 0644 "${FIRSTBOOT_SERVICE}" "${MNT}/etc/systemd/system/unisonos-firstboot.service"
+${SUDO} install -m 0755 "${FIRSTBOOT_SH}" "${MNT}/usr/local/sbin/unisonos-firstboot.sh"
+${SUDO} mkdir -p "${MNT}/etc/systemd/system/multi-user.target.wants"
+${SUDO} ln -sf /etc/systemd/system/unisonos-firstboot.service "${MNT}/etc/systemd/system/multi-user.target.wants/unisonos-firstboot.service"
+
+${SUDO} umount "${MNT}"
+${SUDO} qemu-nbd --disconnect "${NBD_DEV}"
+trap 'rm -rf "${WORKDIR}"' EXIT
 
 echo "[vm/cloudimg] wrote ${QCOW_OUT}"
-
