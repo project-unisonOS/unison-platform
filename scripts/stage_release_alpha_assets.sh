@@ -55,6 +55,20 @@ if command -v xorriso >/dev/null 2>&1; then
   fi
 fi
 
+echo "[release-alpha] compressing bare-metal ISO for GitHub Releases (2GB asset limit)"
+if ! command -v zstd >/dev/null 2>&1; then
+  echo "[release-alpha] ERROR: zstd not installed (required to publish ISO within GitHub Releases limits)" >&2
+  exit 1
+fi
+ISO_ZST="${DIST}/unisonos-baremetal-${VERSION}.iso.zst"
+zstd -T0 -19 --no-progress -o "${ISO_ZST}" "${ISO_DST}"
+rm -f "${ISO_DST}"
+iso_zst_bytes="$(stat -c%s "${ISO_ZST}")"
+if [ "${iso_zst_bytes}" -gt 2147483648 ]; then
+  echo "[release-alpha] ERROR: compressed ISO is still too large for GitHub Releases (${iso_zst_bytes} bytes)" >&2
+  exit 1
+fi
+
 qcow_disk_bytes="$(stat -c%s "${QCOW_DST}")"
 qcow_virtual_bytes="$(qemu-img info "${QCOW_DST}" | awk -F'[()]' '/virtual size/ {gsub(/[^0-9]/, "", $2); print $2; exit}')"
 if [ -z "${qcow_virtual_bytes}" ]; then
