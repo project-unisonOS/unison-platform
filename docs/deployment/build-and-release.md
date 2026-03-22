@@ -17,9 +17,9 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 - `release.yml` workflow — on `v*` tags, installs tooling, builds images/seed ISO, uploads artifacts, and attaches them to GitHub Releases.
 
 ## Installers (`installer/`)
-- `install-docker.sh` — assumes Docker/Compose present; seeds `/etc/unison/platform.env`, installs `unison-platform.service`, pulls images, starts stack.
-- `install-native.sh` — installs Docker/Compose if missing, then same flow as docker installer.
-- `install-wsl.sh` — WSL-friendly path; installs Docker if needed, seeds env, pulls images, starts stack (systemd optional in WSL).
+- `install-docker.sh` — assumes Docker/Compose present; seeds `/etc/unison/platform.env`, installs `unison-platform.service`, and pulls images.
+- `install-native.sh` — installs Docker/Compose if missing, then follows the same bundle/env/systemd flow as the docker installer.
+- `install-wsl.sh` — WSL-friendly path; installs Docker if needed, seeds env, and pulls images for evaluation environments.
 - Shared helpers in `installer/common.sh`.
 
 ## GHCR/Tagging (planned)
@@ -32,7 +32,8 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 - Service repos can call the shared workflow `project-unisonOS/unison-platform/.github/workflows/reusable-build.yml@main` to inherit the same tag semantics and GHCR labels.
 
 ## Usage Notes
-- Before publishing artifacts, ensure secrets in `/etc/unison/platform.env` (or shipped `.env` template) are set.
+- Before publishing artifacts, ensure secrets in `/etc/unison/platform.env` are rotated and production values replace template defaults.
+- First start is intentionally blocked when `/etc/unison/platform.env` still contains template or development defaults.
 - For ISO: bake `images/out/unisonos-iso-<version>/autoinstall/*` into an Ubuntu Server ISO using `xorriso`/`mkisofs`; late-commands install platform and enable `unison-platform.service`.
 - For VM images: the CI build path uses Ubuntu cloud images + libguestfs customization (no KVM required); the image provisions the platform on first boot via a systemd unit.
 - For WSL: distribute `unisonos-wsl-<version>.tar.gz`; extract, set env, run `docker compose -f bundle/docker-compose.prod.yml up -d`.

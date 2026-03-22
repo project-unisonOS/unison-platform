@@ -1,517 +1,162 @@
-# Unison Ubuntu Installation Guide
+# Ubuntu Native Installation
 
-Complete guide for installing and running Unison on Ubuntu 22.04 or 24.04.
+This is the canonical Milestone 1 install path for UnisonOS.
 
----
+Supported target:
 
-## 📋 Prerequisites
+- Ubuntu 24.04 LTS
+- x86_64 hardware
+- local microphone and speakers
+- enough CPU and memory to run the selected local model profile
 
-### System Requirements
+This guide intentionally does not describe evaluator images, default passwords, or developer-only bootstrap flows.
 
-- **OS**: Ubuntu 22.04 LTS or 24.04 LTS
-- **RAM**: Minimum 4GB (8GB recommended)
-- **Disk**: 10GB free space
-- **CPU**: 2+ cores recommended
-- **Audio**: Microphone and speakers/headphones
+## What The Native Installer Does
 
-### Network Requirements
+`installer/install-native.sh`:
 
-- Internet connection for initial installation
-- Ports 8088, 8090, 7072 available (or configurable)
+- installs Docker if missing
+- copies the platform bundle into `/opt/unison-platform`
+- seeds `/etc/unison/platform.env` from `.env.template` if the file does not already exist
+- installs and enables `unison-platform.service`
+- pulls container images
+- stops before first start unless the environment is explicitly production-safe and auto-start is requested
 
----
+That last point is deliberate. The installer will not boot the stack with template or development defaults.
 
-## 🚀 Quick Install
+## Install
 
-### One-Command Installation
-
-```bash
-curl -sSL https://install.unison.ai | sudo bash
-```
-
-Or download and run manually:
+From the `unison-platform` repository:
 
 ```bash
-wget https://install.unison.ai/ubuntu_install.sh
-chmod +x ubuntu_install.sh
-sudo ./ubuntu_install.sh
+sudo make install-native
 ```
 
-### From Source
+Or run the installer directly:
 
 ```bash
-git clone https://github.com/project-unisonos/unison.git
-cd unison
-sudo ./scripts/ubuntu_install.sh
+cd installer
+sudo ./install-native.sh
 ```
 
----
+## Required Configuration Before First Start
 
-## 📦 What Gets Installed
-
-The installation script will:
-
-1. **System Dependencies**
-   - Python 3.12
-   - Docker and Docker Compose
-   - Redis
-   - PulseAudio and ALSA
-   - FFmpeg
-
-2. **Unison Components**
-   - Orchestrator service
-   - Authentication service
-   - Consent service
-   - Supporting infrastructure
-
-3. **Configuration**
-   - Systemd service units
-   - Environment configuration
-   - RSA keys for auth/consent
-   - Audio permissions
-
-4. **Tools**
-   - `unisonctl` - Service management CLI
-   - Audio testing scripts
-
----
-
-## 🎯 Post-Installation
-
-### 1. Start Services
+Open the generated environment file:
 
 ```bash
-sudo unisonctl start
+sudo editor /etc/unison/platform.env
 ```
 
-### 2. Check Status
+At minimum, replace these template defaults:
+
+- `UNISON_ENV=development`
+- `POSTGRES_PASSWORD=unison_password`
+- `JWT_SECRET_KEY=your-super-secret-jwt-key-change-in-production`
+
+For the Milestone 1 native path, set:
+
+- `UNISON_ENV=production`
+- a unique strong `POSTGRES_PASSWORD`
+- a unique strong `JWT_SECRET_KEY`
+- a unique `UNISON_AUTH_BOOTSTRAP_TOKEN` if the `unison-auth` service is enabled in your install profile
+
+Review the rest of the file as well, especially model-provider and audio-related settings for the target machine.
+
+## First Start
+
+Start the platform only after the environment file has been updated:
 
 ```bash
-sudo unisonctl status
+sudo systemctl start unison-platform.service
+sudo systemctl status unison-platform.service
 ```
 
-Expected output:
-```
-═══════════════════════════════════════════════════════════
-                  Unison Service Status
-═══════════════════════════════════════════════════════════
-
-● unison-orchestrator: active
-● unison-auth: active
-● unison-consent: active
-
-═══════════════════════════════════════════════════════════
-```
-
-### 3. Test Audio
+If you need to restart after changes:
 
 ```bash
-sudo unisonctl test audio
+sudo unisonctl restart
 ```
 
-This will:
-- Test speaker output (you should hear a tone)
-- Test microphone input (record and playback)
-- Verify audio permissions
+## First Admin Bootstrap
 
-### 4. Health Check
+If your install profile includes `unison-auth`, create the first admin explicitly after first start:
 
 ```bash
-sudo unisonctl health
-```
+curl http://localhost:8083/bootstrap/status
 
-All services should report as healthy.
-
----
-
-## 🎤 Testing the System
-
-### Echo Skill Test
-
-Once services are running, test the echo skill:
-
-1. Say: **"echo hello world"**
-2. You should hear: **"hello world"**
-
-### Manual API Test
-
-```bash
-# Get auth token
-TOKEN=$(curl -s -X POST http://localhost:8088/token \
+curl -X POST http://localhost:8083/bootstrap/admin \
   -H "Content-Type: application/json" \
-  -d '{"username":"test-user","password":"test-password"}' \
-  | jq -r '.access_token')
-
-# Test orchestrator
-curl -H "Authorization: Bearer $TOKEN" \
-  http://localhost:8090/health
+  -H "X-Unison-Bootstrap-Token: <value from /etc/unison/platform.env>" \
+  -d '{
+    "username": "owner",
+    "password": "ReplaceThisWithAStrongPassword!42",
+    "email": "owner@example.com"
+  }'
 ```
 
----
+This is a one-time bootstrap path. Once an active admin exists, bootstrap closes and ongoing user creation must happen through authenticated admin flows.
 
-## 🛠️ Using unisonctl
+## Verify The Install
 
-### Service Management
+Check the service:
 
 ```bash
-# Start all services
-sudo unisonctl start
-
-# Stop all services
-sudo unisonctl stop
-
-# Restart all services
-sudo unisonctl restart
-
-# Show status
 sudo unisonctl status
-
-# Enable auto-start on boot
-sudo unisonctl enable
-
-# Disable auto-start
-sudo unisonctl disable
 ```
 
-### Logs
+Check container state:
 
 ```bash
-# View logs (last 50 lines)
+sudo docker ps
+```
+
+Check the renderer surface:
+
+- `http://localhost:8092`
+
+If the stack does not come up cleanly, inspect logs:
+
+```bash
 sudo unisonctl logs
-
-# View specific service logs
-sudo unisonctl logs unison-auth
-
-# Follow logs in real-time
-sudo unisonctl follow unison-orchestrator
+sudo unisonctl logs orchestrator
 ```
 
-### Testing
+## Operations And Recovery
+
+The native installer now installs a Milestone 1 `unisonctl` that operates on the compose-backed `unison-platform.service` stack.
+
+Common commands:
 
 ```bash
-# Test audio
-sudo unisonctl test audio
-
-# Health check
-sudo unisonctl health
-```
-
-### Information
-
-```bash
-# Show version
-sudo unisonctl version
-
-# Show help
-sudo unisonctl help
-```
-
----
-
-## 📂 Directory Structure
-
-```
-/opt/unison/              # Installation directory
-├── unison-orchestrator/  # Orchestrator service
-├── unison-auth/          # Auth service
-├── unison-consent/       # Consent service
-├── scripts/              # Utility scripts
-└── .env                  # Environment configuration
-
-/var/lib/unison/          # Data directory
-├── keys/                 # RSA keys
-├── storage/              # Event storage
-└── postgres/             # Database data
-
-/var/log/unison/          # Log directory
-```
-
----
-
-## ⚙️ Configuration
-
-### Environment Variables
-
-Edit `/opt/unison/.env` to configure:
-
-```bash
-# Service ports
-UNISON_ORCHESTRATOR_PORT=8090
-UNISON_AUTH_PORT=8088
-UNISON_CONSENT_PORT=7072
-
-# Redis
-REDIS_HOST=localhost
-REDIS_PORT=6379
-
-# Security (CHANGE IN PRODUCTION!)
-UNISON_JWT_SECRET=<generated>
-UNISON_CONSENT_SECRET=<generated>
-
-# Tracing
-OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
-```
-
-After changing configuration:
-
-```bash
-sudo unisonctl restart
-```
-
-### Audio Configuration
-
-If audio isn't working:
-
-1. **Check devices**:
-   ```bash
-   aplay -l    # List playback devices
-   arecord -l  # List capture devices
-   ```
-
-2. **Check volume**:
-   ```bash
-   alsamixer
-   ```
-
-3. **Check permissions**:
-   ```bash
-   groups      # Should include 'audio'
-   ```
-
-4. **Restart PulseAudio**:
-   ```bash
-   pulseaudio -k
-   pulseaudio --start
-   ```
-
----
-
-## 🔧 Troubleshooting
-
-### Services Won't Start
-
-1. **Check logs**:
-   ```bash
-   sudo unisonctl logs unison-orchestrator
-   ```
-
-2. **Check dependencies**:
-   ```bash
-   systemctl status redis
-   ```
-
-3. **Check ports**:
-   ```bash
-   sudo netstat -tulpn | grep -E '8088|8090|7072'
-   ```
-
-### Audio Issues
-
-1. **Run audio test**:
-   ```bash
-   sudo unisonctl test audio
-   ```
-
-2. **Check PulseAudio**:
-   ```bash
-   pulseaudio --check
-   pactl info
-   ```
-
-3. **Check permissions**:
-   ```bash
-   sudo usermod -aG audio unison
-   sudo systemctl restart unison-orchestrator
-   ```
-
-### Permission Errors
-
-```bash
-# Fix ownership
-sudo chown -R unison:unison /opt/unison
-sudo chown -R unison:unison /var/lib/unison
-sudo chown -R unison:unison /var/log/unison
-
-# Fix permissions
-sudo chmod 600 /var/lib/unison/keys/*_private.pem
-```
-
-### Network Issues
-
-```bash
-# Check if services are listening
-sudo netstat -tulpn | grep python
-
-# Test connectivity
-curl http://localhost:8090/health
-curl http://localhost:8088/health
-curl http://localhost:7072/health
-```
-
----
-
-## 🔐 Security
-
-### Production Deployment
-
-Before deploying to production:
-
-1. **Change secrets**:
-   ```bash
-   sudo nano /opt/unison/.env
-   # Update UNISON_JWT_SECRET and UNISON_CONSENT_SECRET
-   sudo unisonctl restart
-   ```
-
-2. **Enable firewall**:
-   ```bash
-   sudo ufw allow 8090/tcp  # Orchestrator
-   sudo ufw allow 8088/tcp  # Auth
-   sudo ufw allow 7072/tcp  # Consent
-   sudo ufw enable
-   ```
-
-3. **Use HTTPS**:
-   - Set up reverse proxy (nginx/Apache)
-   - Configure SSL certificates
-   - Update service URLs
-
-4. **Rotate keys**:
-   ```bash
-   # Generate new RSA keys
-   cd /var/lib/unison/keys
-   sudo -u unison python3.12 /opt/unison/scripts/generate_keys.py
-   sudo unisonctl restart
-   ```
-
----
-
-## 📊 Monitoring
-
-### Service Status
-
-```bash
-# Check all services
 sudo unisonctl status
-
-# Check individual service
-systemctl status unison-orchestrator
+sudo unisonctl health
+sudo unisonctl logs
+sudo unisonctl follow
+sudo unisonctl doctor
+sudo unisonctl recover
 ```
 
-### Logs
+Recovery posture:
+
+- `unisonctl doctor` checks Docker reachability, systemd unit presence, compose validity, and unsafe environment defaults.
+- `unisonctl recover` performs a guarded restart of the platform stack and then prints post-recovery health.
+- `unisonctl` refuses start, restart, or recover when `/etc/unison/platform.env` still contains template defaults.
+
+Install acceptance:
 
 ```bash
-# View logs
-sudo journalctl -u unison-orchestrator -n 100
-
-# Follow logs
-sudo journalctl -u unison-orchestrator -f
-
-# Filter by time
-sudo journalctl -u unison-orchestrator --since "1 hour ago"
+cd /opt/unison-platform
+RUN_NATIVE_INSTALL_ACCEPTANCE=1 python -m pytest qa/test_native_install_acceptance.py -v
 ```
 
-### Resource Usage
+Or via the repo Make target:
 
 ```bash
-# CPU and memory
-top -p $(pgrep -d',' -f unison)
-
-# Disk usage
-du -sh /var/lib/unison/*
+make qa-native-install
 ```
 
----
+## Notes
 
-## 🔄 Updates
-
-### Update Unison
-
-```bash
-cd /opt/unison
-sudo -u unison git pull
-sudo unisonctl restart
-```
-
-### Update Dependencies
-
-```bash
-sudo apt-get update
-sudo apt-get upgrade
-sudo unisonctl restart
-```
-
----
-
-## 🗑️ Uninstallation
-
-To completely remove Unison:
-
-```bash
-# Stop services
-sudo unisonctl stop
-
-# Disable services
-sudo unisonctl disable
-
-# Remove systemd units
-sudo rm /etc/systemd/system/unison-*.service
-sudo systemctl daemon-reload
-
-# Remove installation
-sudo rm -rf /opt/unison
-sudo rm -rf /var/lib/unison
-sudo rm -rf /var/log/unison
-
-# Remove user
-sudo userdel -r unison
-
-# Remove unisonctl
-sudo rm /usr/local/bin/unisonctl
-```
-
----
-
-## 📚 Additional Resources
-
-- **Documentation**: https://docs.unison.ai
-- **GitHub**: https://github.com/project-unisonos/unison
-- **Support**: https://support.unison.ai
-- **Community**: https://community.unison.ai
-
----
-
-## 🆘 Getting Help
-
-If you encounter issues:
-
-1. Check this documentation
-2. Run diagnostics:
-   ```bash
-   sudo unisonctl health
-   sudo unisonctl test audio
-   ```
-3. Check logs:
-   ```bash
-   sudo unisonctl logs
-   ```
-4. Search GitHub issues
-5. Ask in community forums
-6. Contact support
-
----
-
-## ✅ Verification Checklist
-
-After installation, verify:
-
-- [ ] All services running (`sudo unisonctl status`)
-- [ ] Health checks passing (`sudo unisonctl health`)
-- [ ] Audio working (`sudo unisonctl test audio`)
-- [ ] Echo skill responds
-- [ ] Logs are clean (no errors)
-- [ ] Services auto-start on boot (if enabled)
-
----
-
-**Installation complete! Welcome to Unison!** 🎉
+- WSL2, VM, and bare-metal images remain useful evaluation channels, but they are not the supported production install path.
+- Older `scripts/native/*` material is legacy alpha-era packaging work, not the canonical Milestone 1 install contract.
+- The native installer can be forced to auto-start by setting `UNISON_AUTO_START=1`, but the recommended production path is still to review `/etc/unison/platform.env` before first boot.

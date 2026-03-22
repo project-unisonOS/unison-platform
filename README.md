@@ -71,25 +71,23 @@ make health
 **Best for**: Personal assistants, edge devices, production workstations
 
 ```bash
-# One-command installation (Ubuntu 22.04/24.04)
-curl -sSL https://install.unison.ai | sudo bash
-
-# Or from source
+# From source
 cd unison-platform
 sudo make install-native
 
-# Start services
-sudo unisonctl start
+# Review and update first-run environment
+sudo editor /etc/unison/platform.env
 
-# Check status
+# Start the platform
+sudo unisonctl start
 sudo unisonctl status
 ```
 
 **See [docs/deployment/ubuntu-native.md](docs/deployment/ubuntu-native.md) for complete native installation guide.**
 
-### Developer Images (WSL2 / VM / Bare Metal)
+### Evaluation Images (WSL2 / VM / Bare Metal)
 
-Platform images are delivered as GitHub Release assets (not GHCR). Start here:
+Platform images are delivered as GitHub Release assets for evaluation. They are not the primary Milestone 1 install route.
 
 - Install guide (choose one):
   - `docs/install-wsl2.md`

@@ -32,6 +32,7 @@ require_docker
 echo "Installing Unison Platform for WSL into ${PREFIX}"
 cd "${ROOT_DIR}"
 copy_bundle
+install_control_cli
 seed_env
 pull_images
 
@@ -39,10 +40,10 @@ pull_images
 if command -v systemctl >/dev/null 2>&1; then
   write_systemd_unit
 fi
-start_stack
+maybe_start_stack
 
 if [ -x "${PREFIX}/installer/ensure-models.sh" ]; then
   "${PREFIX}/installer/ensure-models.sh" || true
 fi
 
-echo "Installation complete. Edit ${ENV_FILE} for secrets. Restart with docker compose -f ${PREFIX}/docker-compose.yml up -d (or systemctl if available)."
+echo "Installation complete."

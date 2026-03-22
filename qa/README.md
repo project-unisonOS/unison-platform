@@ -13,7 +13,9 @@ Integration with CI:
 - Invoked from platform workflows for nightly/beta/stable channels.
 - Parameterized to run against Docker Compose, native installs, or built images.
 
-Status: scaffolding — test harness and fixtures will land in Phase 2+.
+Status:
+- `qa/test_smoke.py` covers the compose/devstack smoke path.
+- `qa/test_native_install_acceptance.py` covers the supported Ubuntu native install path when run against a real installed stack.
 
 ## Running Locally
 
@@ -22,3 +24,15 @@ TARGET_HOST=http://localhost PORT_ORCHESTRATOR=8090 python -m pytest qa -v
 ```
 
 Defaults match dev/prod compose mappings; override ports via env vars.
+
+Native install acceptance:
+
+```bash
+RUN_NATIVE_INSTALL_ACCEPTANCE=1 python -m pytest qa/test_native_install_acceptance.py -v
+```
+
+Useful overrides:
+- `UNISONCTL_BIN`
+- `ORCHESTRATOR_BASE_URL`
+- `RENDERER_BASE_URL`
+- `AUTH_BASE_URL`

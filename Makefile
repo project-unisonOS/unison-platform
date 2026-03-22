@@ -231,6 +231,11 @@ qa-smoke: ## Run platform smoke tests (scaffolding)
 	@python -m pytest qa -v --tb=short
 	@echo "$(GREEN)QA smoke completed$(RESET)"
 
+qa-native-install: ## Run native install acceptance against a real installed stack
+	@echo "$(BLUE)Running native install acceptance...$(RESET)"
+	@RUN_NATIVE_INSTALL_ACCEPTANCE=1 python -m pytest qa/test_native_install_acceptance.py -v --tb=short
+	@echo "$(GREEN)Native install acceptance completed$(RESET)"
+
 docs: ## Generate documentation
 	@echo "$(BLUE)Generating documentation...$(RESET)"
 	@./scripts/generate-docs.sh

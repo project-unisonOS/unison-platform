@@ -2,7 +2,9 @@
 title: Install UnisonOS (WSL2)
 ---
 
-# Install UnisonOS (WSL2)
+# Install UnisonOS (WSL2 Evaluation)
+
+WSL2 is an evaluation channel for Milestone 1, not the supported production install target.
 
 Download the WSL2 artifact from the GitHub Release:
 
@@ -25,6 +27,8 @@ wsl --import UnisonOS `
 
 wsl -d UnisonOS
 ```
+
+After import, review `/etc/unison/platform.env`, replace any template or development defaults, and then start the stack manually.
 
 ## Access
 

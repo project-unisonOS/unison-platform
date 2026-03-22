@@ -5,6 +5,14 @@ PREFIX=${PREFIX:-/opt/unison-platform}
 ENV_FILE=${ENV_FILE:-/etc/unison/platform.env}
 SYSTEMD_UNIT=${SYSTEMD_UNIT:-/etc/systemd/system/unison-platform.service}
 COMPOSE_FILE=${COMPOSE_FILE:-docker-compose.prod.yml}
+UNISON_AUTO_START=${UNISON_AUTO_START:-0}
+UNISON_SKIP_START=${UNISON_SKIP_START:-0}
+
+readonly UNSAFE_ENV_MARKERS=(
+  "UNISON_ENV=development"
+  "POSTGRES_PASSWORD=unison_password"
+  "JWT_SECRET_KEY=your-super-secret-jwt-key-change-in-production"
+)
 
 require_root() {
   if [ "${EUID:-$(id -u)}" -ne 0 ]; then
@@ -41,6 +49,12 @@ copy_bundle() {
   fi
 }
 
+install_control_cli() {
+  if [ -f "./installer/unisonctl.sh" ]; then
+    install -m 0755 "./installer/unisonctl.sh" /usr/local/bin/unisonctl
+  fi
+}
+
 seed_env() {
   mkdir -p "$(dirname "${ENV_FILE}")"
   if [ ! -f "${ENV_FILE}" ]; then
@@ -48,6 +62,41 @@ seed_env() {
     chmod 600 "${ENV_FILE}"
     echo "Seeded ${ENV_FILE} from .env.template. Update secrets before starting." >&2
   fi
+}
+
+env_contains_unsafe_defaults() {
+  local marker
+  for marker in "${UNSAFE_ENV_MARKERS[@]}"; do
+    if grep -Fqx "${marker}" "${ENV_FILE}"; then
+      return 0
+    fi
+  done
+  return 1
+}
+
+print_manual_start_instructions() {
+  local start_cmd="systemctl start unison-platform.service"
+  local status_cmd="systemctl status unison-platform.service"
+
+  if ! command -v systemctl >/dev/null 2>&1; then
+    start_cmd="docker compose -f ${PREFIX}/docker-compose.yml up -d --remove-orphans"
+    status_cmd="docker compose -f ${PREFIX}/docker-compose.yml ps"
+  fi
+
+  cat >&2 <<EOF
+Unison Platform is installed but not started yet.
+
+Before first start:
+  1. Edit ${ENV_FILE}
+  2. Set production-safe values for:
+     - UNISON_ENV
+     - POSTGRES_PASSWORD
+     - JWT_SECRET_KEY
+
+After updating the environment:
+  ${start_cmd}
+  ${status_cmd}
+EOF
 }
 
 write_systemd_unit() {
@@ -80,6 +129,28 @@ start_stack() {
   else
     (cd "${PREFIX}" && docker compose -f docker-compose.yml up -d --remove-orphans)
   fi
+}
+
+maybe_start_stack() {
+  if [ "${UNISON_SKIP_START}" = "1" ]; then
+    echo "Skipping first start because UNISON_SKIP_START=1." >&2
+    print_manual_start_instructions
+    return 0
+  fi
+
+  if env_contains_unsafe_defaults; then
+    echo "Refusing first start because ${ENV_FILE} still contains template or development defaults." >&2
+    print_manual_start_instructions
+    return 0
+  fi
+
+  if [ "${UNISON_AUTO_START}" != "1" ]; then
+    echo "Installation completed without auto-start. Set UNISON_AUTO_START=1 to opt in." >&2
+    print_manual_start_instructions
+    return 0
+  fi
+
+  start_stack
 }
 
 pull_images() {

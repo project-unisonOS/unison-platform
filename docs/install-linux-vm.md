@@ -2,7 +2,9 @@
 title: Install UnisonOS (Linux VM)
 ---
 
-# Install UnisonOS (Linux VM)
+# Install UnisonOS (Linux VM Evaluation)
+
+Linux VM images are for evaluation and integration testing. Ubuntu 24.04 native remains the supported Milestone 1 install path.
 
 Download the VM image from the GitHub Release:
 
@@ -27,7 +29,4 @@ qemu-system-x86_64 \
 
 - Renderer UI: `http://localhost:8092` (if you forwarded ports) or `http://<vm-ip>:8092`
 
-## Login
-
-- Default user: `unison`
-- Default password: `unison` (alpha evaluator default; change immediately for real installs)
+Do not treat any bundled credentials, sample users, or preconfigured environment values in evaluator images as production-safe. Review `/etc/unison/platform.env` and rotate secrets before first start.

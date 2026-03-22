@@ -2,7 +2,9 @@
 title: Install UnisonOS (Bare Metal)
 ---
 
-# Install UnisonOS (Bare Metal)
+# Install UnisonOS (Bare Metal Evaluation)
+
+Bare-metal ISO images are still an evaluation channel. They are not the supported Milestone 1 installation path.
 
 Download the bare-metal installer ISO from the GitHub Release:
 
@@ -32,7 +34,4 @@ GitHub Releases limit individual assets to 2GB, so the bare-metal ISO is shipped
 
 - Renderer UI: `http://<device-ip>:8092`
 
-## Login
-
-- Default user: `unison`
-- Default password: `unison` (alpha evaluator default; change immediately for real installs)
+Review `/etc/unison/platform.env` after install, remove any template defaults, and set production-safe secrets before the first platform start.

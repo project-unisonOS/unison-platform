@@ -1,15 +1,22 @@
+title: Install UnisonOS
 ---
-title: Install UnisonOS (Developer Images)
----
 
-# Install UnisonOS (Release Artifacts)
+# Install UnisonOS
 
-UnisonOS platform artifacts are distributed as **GitHub Release assets**:
+For the current production-track milestone, the supported installation target is Ubuntu 24.04 native on x86_64 hardware.
 
-- **Download page (v0.5.0-alpha.1)**: https://github.com/project-unisonOS/unison-platform/releases/tag/v0.5.0-alpha.1
+Start here:
 
-Choose your install target:
+- [Ubuntu Native Installation](deployment/ubuntu-native.md)
 
-- [Install (WSL2)](install-wsl2.md)
-- [Install (Linux VM)](install-linux-vm.md)
-- [Install (Bare Metal)](install-bare-metal.md)
+Evaluation-only channels remain available for testing and documentation work:
+
+- [Install (WSL2 Evaluation)](install-wsl2.md)
+- [Install (Linux VM Evaluation)](install-linux-vm.md)
+- [Install (Bare Metal Evaluation)](install-bare-metal.md)
+
+Important:
+
+- WSL2, VM, and bare-metal image artifacts are not the canonical Milestone 1 user-install path.
+- Installers now seed `/etc/unison/platform.env` but do not start the platform until production-safe secrets and environment values are set.
+- If you are evaluating release artifacts, treat them as non-production previews and review the install guide before first start.
