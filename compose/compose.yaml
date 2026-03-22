@@ -185,6 +185,8 @@ services:
       - unison-network
 
   updates:
+    build:
+      context: ../../unison-updates
     image: ghcr.io/project-unisonos/unison-updates:main
     restart: unless-stopped
     ports:
