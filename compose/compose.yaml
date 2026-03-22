@@ -160,6 +160,7 @@ services:
       NATS_HOST: nats
       INTENT_GRAPH_URL: http://intent-graph:8080
       CONTEXT_GRAPH_URL: http://context-graph:8081
+      UNISON_UPDATES_URL: http://updates:8089
     depends_on:
       context:
         condition: service_healthy
@@ -177,6 +178,33 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  updates:
+    image: ghcr.io/project-unisonos/unison-updates:main
+    restart: unless-stopped
+    ports:
+      - "8094:8089"
+    env_file:
+      - .env
+    environment:
+      SERVICE_NAME: unison-updates
+      SERVICE_PORT: 8089
+      UNISON_UPDATES_PORT: 8089
+      UNISON_RENDERER_URL: http://experience-renderer:8082
+      # Dev defaults: allow unsigned local registries. Production images should set this true and ship pubkeys.
+      UNISON_UPDATES_REQUIRE_SIGNATURES: "false"
+    volumes:
+      - updates_data:/var/lib/unison/updates
+    depends_on:
+      experience-renderer:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8089/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -505,6 +533,8 @@ volumes:
   prometheus_data:
     driver: local
   grafana_data:
+    driver: local
+  updates_data:
     driver: local
 
 networks:

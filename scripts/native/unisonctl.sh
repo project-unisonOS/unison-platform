@@ -20,6 +20,7 @@ SERVICES=(
     "unison-orchestrator"
     "unison-auth"
     "unison-consent"
+    "unison-updates"
 )
 
 # Helper functions
@@ -212,6 +213,13 @@ cmd_health() {
         log_success "Consent: healthy"
     else
         log_error "Consent: unhealthy"
+    fi
+
+    # Check updates
+    if curl -s http://localhost:8094/health > /dev/null 2>&1; then
+        log_success "Updates: healthy"
+    else
+        log_warning "Updates: unavailable (is unison-updates installed?)"
     fi
     
     # Check Redis
