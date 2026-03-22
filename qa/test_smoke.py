@@ -20,7 +20,7 @@ PORTS = {
     "intent_graph": int(os.environ.get("PORT_INTENT_GRAPH", "8080")),
     "context": int(os.environ.get("PORT_CONTEXT", "8081")),
     "storage": int(os.environ.get("PORT_STORAGE", "8082")),
-    "policy": int(os.environ.get("PORT_POLICY", "8083")),
+    "policy": int(os.environ.get("PORT_POLICY", "8095")),
     "auth": int(os.environ.get("PORT_AUTH", "8083")),
     "io_speech": int(os.environ.get("PORT_IO_SPEECH", "8084")),
     "io_core": int(os.environ.get("PORT_IO_CORE", "8085")),

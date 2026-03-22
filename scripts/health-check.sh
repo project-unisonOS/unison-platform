@@ -15,7 +15,7 @@ NC='\033[0m' # No Color
 declare -A SERVICES=(
     ["auth"]="http://localhost:8083/health"
     ["context"]="http://localhost:8081/health"
-    ["policy"]="http://localhost:8083/health"
+    ["policy"]="http://localhost:8095/health"
     ["orchestrator"]="http://localhost:8090/health"
     ["intent-graph"]="http://localhost:8080/health"
     ["context-graph"]="http://localhost:8091/health"
@@ -30,8 +30,8 @@ declare -A SERVICES=(
 
 # Infrastructure services
 declare -A INFRA=(
-    ["redis"]="localhost:6379"
-    ["postgres"]="localhost:5432"
+    ["redis"]="localhost:${REDIS_HOST_PORT:-6379}"
+    ["postgres"]="localhost:${POSTGRES_HOST_PORT:-5432}"
     ["nats"]="localhost:4222"
 )
 

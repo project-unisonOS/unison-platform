@@ -8,7 +8,7 @@ services:
     image: redis:7-alpine
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - "${REDIS_HOST_PORT:-6379}:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
@@ -24,7 +24,7 @@ services:
     image: postgres:15-alpine
     restart: unless-stopped
     ports:
-      - "5432:5432"
+      - "${POSTGRES_HOST_PORT:-5432}:5432"
     environment:
       POSTGRES_DB: unison
       POSTGRES_USER: unison
@@ -62,7 +62,7 @@ services:
     image: ghcr.io/project-unisonos/unison-auth:main
     restart: unless-stopped
     ports:
-      - "8083:8083"
+      - "${AUTH_HOST_PORT:-8083}:8083"
     env_file:
       - .env
     environment:
@@ -119,7 +119,7 @@ services:
     image: ghcr.io/project-unisonos/unison-policy:main
     restart: unless-stopped
     ports:
-      - "8083:8083"
+      - "${POLICY_HOST_PORT:-8095}:8083"
     env_file:
       - .env
     environment:
@@ -190,7 +190,7 @@ services:
     image: ghcr.io/project-unisonos/unison-updates:main
     restart: unless-stopped
     ports:
-      - "8094:8089"
+      - "${UPDATES_HOST_PORT:-8094}:8089"
     env_file:
       - .env
     environment:

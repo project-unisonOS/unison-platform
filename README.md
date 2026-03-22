@@ -125,12 +125,14 @@ Once started, all services are available at:
 | **Agent VDI** | [http://localhost:8093](http://localhost:8093) | Virtual display interface |
 | **Auth Service** | [http://localhost:8083](http://localhost:8083) | Authentication & authorization |
 | **Context Service** | [http://localhost:8081](http://localhost:8081) | Context management |
-| **Policy Service** | [http://localhost:8083](http://localhost:8083) | Policy enforcement |
+| **Policy Service** | [http://localhost:8095](http://localhost:8095) | Policy enforcement |
 | **I/O Speech** | [http://localhost:8084](http://localhost:8084) | Speech processing |
 | **I/O Vision** | [http://localhost:8086](http://localhost:8086) | Vision processing |
 | **I/O Core** | http://localhost:8085 | I/O coordination |
 | **Inference** | http://localhost:8087 | ML inference gateway |
 | **Storage** | http://localhost:8082 | Data persistence |
+
+Core host ports can be overridden locally through `.env` values such as `POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `AUTH_HOST_PORT`, `POLICY_HOST_PORT`, and `UPDATES_HOST_PORT`.
 
 ## 🛠️ Developer Experience
 
