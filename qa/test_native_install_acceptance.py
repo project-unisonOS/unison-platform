@@ -24,6 +24,7 @@ RENDERER_BASE = os.environ.get("RENDERER_BASE_URL", "http://localhost:8092")
 AUTH_BASE = os.environ.get("AUTH_BASE_URL", "http://localhost:8083")
 CONTEXT_BASE = os.environ.get("CONTEXT_BASE_URL", "http://localhost:8081")
 AGENT_VDI_BASE = os.environ.get("AGENT_VDI_BASE_URL", "http://localhost:8093")
+STORAGE_BASE = os.environ.get("STORAGE_BASE_URL", "http://localhost:8082")
 MILESTONE1_USERNAME = os.environ.get("MILESTONE1_ACCEPTANCE_USERNAME")
 MILESTONE1_PASSWORD = os.environ.get("MILESTONE1_ACCEPTANCE_PASSWORD")
 MILESTONE1_PERSON_ID = os.environ.get("MILESTONE1_ACCEPTANCE_PERSON_ID", "local-person")
@@ -155,12 +156,15 @@ def test_briefing_refresh_returns_cards_and_emits():
 
 def test_vdi_download_returns_artifact_ids():
     _wait_http_ok(f"{AGENT_VDI_BASE}/readyz")
+    _wait_http_ok(f"{RENDERER_BASE}/readyz")
+    _wait_http_ok(f"{CONTEXT_BASE}/health")
 
+    session_id = "milestone1-vdi-acceptance"
     resp = requests.post(
         f"{AGENT_VDI_BASE}/tasks/download",
         json={
             "person_id": MILESTONE1_PERSON_ID,
-            "session_id": "milestone1-vdi-acceptance",
+            "session_id": session_id,
             "url": "http://experience-renderer:8082/readyz",
             "filename": "renderer-readyz.txt",
         },
@@ -171,3 +175,44 @@ def test_vdi_download_returns_artifact_ids():
     assert body.get("status") == "ok"
     file_ids = body.get("file_ids") or []
     assert isinstance(file_ids, list) and file_ids, body
+
+    artifact_id = file_ids[0]
+    storage_resp = requests.get(f"{STORAGE_BASE}/kv/vdi_artifacts/{artifact_id}", timeout=5)
+    assert storage_resp.status_code == 200, storage_resp.text
+    storage_body = storage_resp.json()
+    assert storage_body.get("ok") is True, storage_body
+    stored_value = storage_body.get("value") or {}
+    assert stored_value.get("artifact_id") == artifact_id
+    assert stored_value.get("filename") == "renderer-readyz.txt"
+    metadata = stored_value.get("metadata") or {}
+    assert metadata.get("person_id") == MILESTONE1_PERSON_ID
+    assert metadata.get("session_id") == session_id
+    assert metadata.get("source_url") == "http://experience-renderer:8082/readyz"
+    assert isinstance(stored_value.get("content_b64"), str) and stored_value.get("content_b64")
+
+    deadline = time.time() + 5
+    last_events = []
+    while time.time() < deadline:
+        renderer_resp = requests.get(f"{RENDERER_BASE}/telemetry/actuation", timeout=5)
+        assert renderer_resp.status_code == 200, renderer_resp.text
+        items = (renderer_resp.json() or {}).get("items") or []
+        last_events = items
+        if any(
+            item.get("action") == "download"
+            and item.get("session_id") == session_id
+            and item.get("status") == "ok"
+            and artifact_id in (item.get("file_ids") or [])
+            for item in items
+            if isinstance(item, dict)
+        ):
+            break
+        time.sleep(0.5)
+
+    assert any(
+        item.get("action") == "download"
+        and item.get("session_id") == session_id
+        and item.get("status") == "ok"
+        and artifact_id in (item.get("file_ids") or [])
+        for item in last_events
+        if isinstance(item, dict)
+    ), last_events
