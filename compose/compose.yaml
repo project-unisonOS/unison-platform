@@ -430,7 +430,9 @@ services:
       NATS_HOST: nats
       AUTH_URL: http://auth:8088
       UNISON_INFERENCE_PROVIDER: "ollama"
-      UNISON_INFERENCE_MODEL: "qwen2.5:1.5b"
+      UNISON_INFERENCE_MODEL: "${UNISON_INFERENCE_MODEL:-qwen2.5:1.5b}"
+      UNISON_INFERENCE_MODEL_TEXT: "${UNISON_INFERENCE_MODEL_TEXT:-${UNISON_INFERENCE_MODEL:-qwen2.5:1.5b}}"
+      UNISON_INFERENCE_MODEL_MULTIMODAL: "${UNISON_INFERENCE_MODEL_MULTIMODAL:-${UNISON_INFERENCE_MODEL:-qwen2.5:1.5b}}"
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
     extra_hosts:
       - "host.docker.internal:host-gateway"
