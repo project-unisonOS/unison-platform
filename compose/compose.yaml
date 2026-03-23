@@ -44,8 +44,8 @@ services:
     image: nats:2.10-alpine
     restart: unless-stopped
     ports:
-      - "4222:4222"
-      - "8222:8222"  # HTTP monitoring
+      - "${NATS_HOST_PORT:-4222}:4222"
+      - "${NATS_MONITOR_HOST_PORT:-8222}:8222"  # HTTP monitoring
     command: ["--jetstream", "--store_dir", "/data", "--http_port", "8222"]
     volumes:
       - nats_data:/data
@@ -62,12 +62,12 @@ services:
     image: ghcr.io/project-unisonos/unison-auth:main
     restart: unless-stopped
     ports:
-      - "${AUTH_HOST_PORT:-8083}:8083"
+      - "${AUTH_HOST_PORT:-8083}:8088"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-auth
-      SERVICE_PORT: 8083
+      SERVICE_PORT: 8088
       POSTGRES_HOST: postgres
       REDIS_HOST: redis
     volumes:
@@ -78,7 +78,7 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -89,15 +89,15 @@ services:
     image: ghcr.io/project-unisonos/unison-context:main
     restart: unless-stopped
     ports:
-      - "8081:8081"
+      - "${CONTEXT_HOST_PORT:-8081}:8081"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-context
       SERVICE_PORT: 8081
       POSTGRES_HOST: postgres
       REDIS_HOST: redis
-      AUTH_URL: http://auth:8083
+      AUTH_URL: http://auth:8088
     volumes:
       - context_data:/data
     depends_on:
@@ -121,13 +121,13 @@ services:
     ports:
       - "${POLICY_HOST_PORT:-8095}:8083"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-policy
       SERVICE_PORT: 8083
       POSTGRES_HOST: postgres
       REDIS_HOST: redis
-      AUTH_URL: http://auth:8083
+      AUTH_URL: http://auth:8088
     depends_on:
       postgres:
         condition: service_healthy
@@ -147,15 +147,15 @@ services:
     image: ghcr.io/project-unisonos/unison-orchestrator:main
     restart: unless-stopped
     ports:
-      - "8090:8080"
+      - "${ORCHESTRATOR_HOST_PORT:-8090}:8080"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-orchestrator
       SERVICE_PORT: 8080
       CONTEXT_URL: http://context:8081
       POLICY_URL: http://policy:8083
-      AUTH_URL: http://auth:8083
+      AUTH_URL: http://auth:8088
       REDIS_HOST: redis
       NATS_HOST: nats
       INTENT_GRAPH_URL: http://intent-graph:8080
@@ -192,7 +192,7 @@ services:
     ports:
       - "${UPDATES_HOST_PORT:-8094}:8089"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-updates
       SERVICE_PORT: 8089
@@ -218,9 +218,9 @@ services:
     image: ghcr.io/project-unisonos/unison-intent-graph:main
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "${INTENT_GRAPH_HOST_PORT:-8080}:8080"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-intent-graph
       SERVICE_PORT: 8080
@@ -244,9 +244,9 @@ services:
     image: ghcr.io/project-unisonos/unison-context-graph:main
     restart: unless-stopped
     ports:
-      - "8091:8081"
+      - "${CONTEXT_GRAPH_HOST_PORT:-8091}:8081"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-context-graph
       SERVICE_PORT: 8081
@@ -261,7 +261,7 @@ services:
       intent-graph:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8081/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -272,9 +272,9 @@ services:
     image: ghcr.io/project-unisonos/unison-experience-renderer:main
     restart: unless-stopped
     ports:
-      - "8092:8082"
+      - "${EXPERIENCE_RENDERER_HOST_PORT:-8092}:8082"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-experience-renderer
       SERVICE_PORT: 8082
@@ -303,9 +303,9 @@ services:
     image: ghcr.io/project-unisonos/unison-agent-vdi:main
     restart: unless-stopped
     ports:
-      - "8093:8083"
+      - "${AGENT_VDI_HOST_PORT:-8093}:8083"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-agent-vdi
       SERVICE_PORT: 8083
@@ -338,14 +338,14 @@ services:
     image: ghcr.io/project-unisonos/unison-io-speech:main
     restart: unless-stopped
     ports:
-      - "8084:8084"
+      - "${IO_SPEECH_HOST_PORT:-8084}:8084"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-io-speech
       SERVICE_PORT: 8084
       NATS_HOST: nats
-      AUTH_URL: http://auth:8083
+      AUTH_URL: http://auth:8088
     depends_on:
       nats:
         condition: service_healthy
@@ -363,14 +363,14 @@ services:
     image: ghcr.io/project-unisonos/unison-io-vision:main
     restart: unless-stopped
     ports:
-      - "8086:8086"
+      - "${IO_VISION_HOST_PORT:-8086}:8086"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-io-vision
       SERVICE_PORT: 8086
       NATS_HOST: nats
-      AUTH_URL: http://auth:8083
+      AUTH_URL: http://auth:8088
     depends_on:
       nats:
         condition: service_healthy
@@ -388,14 +388,14 @@ services:
     image: ghcr.io/project-unisonos/unison-io-core:main
     restart: unless-stopped
     ports:
-      - "8085:8085"
+      - "${IO_CORE_HOST_PORT:-8085}:8085"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-io-core
       SERVICE_PORT: 8085
       NATS_HOST: nats
-      AUTH_URL: http://auth:8083
+      AUTH_URL: http://auth:8088
       SPEECH_URL: http://io-speech:8084
       VISION_URL: http://io-vision:8086
     depends_on:
@@ -420,14 +420,14 @@ services:
     image: ghcr.io/project-unisonos/unison-inference:main
     restart: unless-stopped
     ports:
-      - "8087:8087"
+      - "${INFERENCE_HOST_PORT:-8087}:8087"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-inference
       SERVICE_PORT: 8087
       NATS_HOST: nats
-      AUTH_URL: http://auth:8083
+      AUTH_URL: http://auth:8088
       UNISON_INFERENCE_PROVIDER: "ollama"
       UNISON_INFERENCE_MODEL: "qwen2.5:1.5b"
     depends_on:
@@ -448,14 +448,14 @@ services:
     image: ghcr.io/project-unisonos/unison-storage:main
     restart: unless-stopped
     ports:
-      - "8082:8082"
+      - "${STORAGE_HOST_PORT:-8082}:8082"
     env_file:
-      - .env
+      - ../.env
     environment:
       SERVICE_NAME: unison-storage
       SERVICE_PORT: 8082
       POSTGRES_HOST: postgres
-      AUTH_URL: http://auth:8083
+      AUTH_URL: http://auth:8088
     volumes:
       - storage_data:/data
     depends_on:

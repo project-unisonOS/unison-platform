@@ -7,6 +7,7 @@
 # Default environment
 ENV ?= dev
 PROFILE ?= $(ENV)
+COMPOSE := docker compose --env-file .env -f compose/compose.yaml --profile $(PROFILE)
 
 # Colors for output
 BLUE := \033[36m
@@ -23,7 +24,7 @@ help: ## Show this help message
 up: ## Start the Unison stack
 	@echo "$(BLUE)Starting Unison platform ($(ENV))...$(RESET)"
 	@mkdir -p logs
-	@docker compose --profile $(PROFILE) up -d --wait
+	@$(COMPOSE) up -d --wait
 	@echo "$(GREEN)Stack is ready!$(RESET)"
 	@echo "$(YELLOW)Service Endpoints:$(RESET)"
 	@echo "   - Orchestrator:     http://localhost:8090/health"
@@ -33,7 +34,7 @@ up: ## Start the Unison stack
 	@echo "   - Agent VDI:        http://localhost:8093/health"
 	@echo "   - Auth Service:     http://localhost:8083/health"
 	@echo "   - Context Service:  http://localhost:8081/health"
-	@echo "   - Policy Service:   http://localhost:8083/health"
+	@echo "   - Policy Service:   http://localhost:8095/health"
 	@echo "   - I/O Speech:       http://localhost:8084/health"
 	@echo "   - I/O Vision:       http://localhost:8086/health"
 	@echo "   - I/O Core:         http://localhost:8085/health"
@@ -48,12 +49,12 @@ up: ## Start the Unison stack
 
 down: ## Stop the Unison stack
 	@echo "$(BLUE)Stopping Unison platform...$(RESET)"
-	@docker compose --profile $(PROFILE) down -v --remove-orphans
+	@$(COMPOSE) down -v --remove-orphans
 	@echo "$(GREEN)Stack stopped$(RESET)"
 
 logs: ## Show logs from all services
 	@echo "$(BLUE)Streaming logs from all services...$(RESET)"
-	@docker compose --profile $(PROFILE) logs -f --tail=200
+	@$(COMPOSE) logs -f --tail=200
 
 logs-service: ## Show logs for a specific service (usage: make logs-service SERVICE=orchestrator)
 	@if [ -z "$(SERVICE)" ]; then \
@@ -61,15 +62,15 @@ logs-service: ## Show logs for a specific service (usage: make logs-service SERV
 		exit 1; \
 	fi
 	@echo "$(BLUE)Streaming logs from $(SERVICE)...$(RESET)"
-	@docker compose --profile $(PROFILE) logs -f --tail=100 $(SERVICE)
+	@$(COMPOSE) logs -f --tail=100 $(SERVICE)
 
 status: ## Show status of all services
 	@echo "$(BLUE)Service Status:$(RESET)"
-	@docker compose --profile $(PROFILE) ps
+	@$(COMPOSE) ps
 
 test-int: ## Run integration tests
 	@echo "$(BLUE)Running integration tests...$(RESET)"
-	@docker compose --profile $(PROFILE) up -d --wait
+	@$(COMPOSE) up -d --wait
 	@sleep 10  # Wait for services to be fully ready
 	@python -m pytest tests/integration/ -v --tb=short --color=yes
 	@echo "$(GREEN)Integration tests completed$(RESET)"
@@ -91,7 +92,7 @@ validate: ## Validate service contracts and dependencies
 
 clean: ## Clean up Docker resources and caches
 	@echo "$(BLUE)Cleaning up Docker resources...$(RESET)"
-	@docker compose --profile $(PROFILE) down -v --remove-orphans
+	@$(COMPOSE) down -v --remove-orphans
 	@docker system prune -f
 	@docker volume prune -f
 	@docker network prune -f
@@ -117,7 +118,7 @@ health: ## Check health of all services
 
 restart: ## Restart all services
 	@echo "$(BLUE)Restarting services...$(RESET)"
-	@docker compose --profile $(PROFILE) restart
+	@$(COMPOSE) restart
 	@echo "$(GREEN)Services restarted$(RESET)"
 
 restart-service: ## Restart a specific service (usage: make restart-service SERVICE=orchestrator)
@@ -126,7 +127,7 @@ restart-service: ## Restart a specific service (usage: make restart-service SERV
 		exit 1; \
 	fi
 	@echo "$(BLUE)Restarting $(SERVICE)...$(RESET)"
-	@docker compose --profile $(PROFILE) restart $(SERVICE)
+	@$(COMPOSE) restart $(SERVICE)
 	@echo "$(GREEN)$(SERVICE) restarted$(RESET)"
 
 shell: ## Get shell in a service container (usage: make shell SERVICE=orchestrator)
@@ -135,7 +136,7 @@ shell: ## Get shell in a service container (usage: make shell SERVICE=orchestrat
 		exit 1; \
 	fi
 	@echo "$(BLUE)Opening shell in $(SERVICE)...$(RESET)"
-	@docker compose --profile $(PROFILE) exec $(SERVICE) /bin/bash
+	@$(COMPOSE) exec $(SERVICE) /bin/bash
 
 exec: ## Execute command in a service (usage: make exec SERVICE=orchestrator CMD="ls -la")
 	@if [ -z "$(SERVICE)" ] || [ -z "$(CMD)" ]; then \
@@ -143,16 +144,16 @@ exec: ## Execute command in a service (usage: make exec SERVICE=orchestrator CMD
 		exit 1; \
 	fi
 	@echo "$(BLUE)Executing in $(SERVICE): $(CMD)$(RESET)"
-	@docker compose --profile $(PROFILE) exec $(SERVICE) sh -c "$(CMD)"
+	@$(COMPOSE) exec $(SERVICE) sh -c "$(CMD)"
 
 build: ## Build all services
 	@echo "$(BLUE)Building all services...$(RESET)"
-	@docker compose --profile $(PROFILE) build --parallel
+	@$(COMPOSE) build --parallel
 	@echo "$(GREEN)Build completed$(RESET)"
 
 pull: ## Pull latest images
 	@echo "$(BLUE)Pulling latest images...$(RESET)"
-	@docker compose --profile $(PROFILE) pull
+	@$(COMPOSE) pull
 	@echo "$(GREEN)Images pulled$(RESET)"
 
 update: ## Update stack (pull + up)
@@ -174,7 +175,7 @@ restore: ## Restore from backup (usage: make restore BACKUP_DIR=20231103_120000)
 		exit 1; \
 	fi
 	@echo "$(BLUE)Restoring from backup $(BACKUP_DIR)...$(RESET)"
-	@docker compose --profile $(PROFILE) down -v
+	@$(COMPOSE) down -v
 	@docker run --rm -v unison-devstack_postgres_data:/data -v $$PWD/backups/$(BACKUP_DIR):/backup alpine tar xzf /backup/postgres_data.tar.gz -C /data
 	@docker run --rm -v unison-devstack_redis_data:/data -v $$PWD/backups/$(BACKUP_DIR):/backup alpine tar xzf /backup/redis_data.tar.gz -C /data
 	@make up
@@ -264,7 +265,7 @@ metrics: ## Show system metrics
 	@docker stats --no-stream
 
 top: ## Show running processes
-	@docker compose --profile $(PROFILE) top
+	@$(COMPOSE) top
 # ============================================================================
 # Native Ubuntu Deployment (P1.1)
 # ============================================================================

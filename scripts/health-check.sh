@@ -4,6 +4,15 @@
 
 set -euo pipefail
 
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+REPO_ROOT=$(cd -- "${SCRIPT_DIR}/.." && pwd)
+if [[ -f "${REPO_ROOT}/.env" ]]; then
+    set -a
+    # shellcheck disable=SC1091
+    . "${REPO_ROOT}/.env"
+    set +a
+fi
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -13,26 +22,26 @@ NC='\033[0m' # No Color
 
 # Service configuration
 declare -A SERVICES=(
-    ["auth"]="http://localhost:8083/health"
-    ["context"]="http://localhost:8081/health"
-    ["policy"]="http://localhost:8095/health"
-    ["orchestrator"]="http://localhost:8090/health"
-    ["intent-graph"]="http://localhost:8080/health"
-    ["context-graph"]="http://localhost:8091/health"
-    ["experience-renderer"]="http://localhost:8092/health"
-    ["agent-vdi"]="http://localhost:8093/health"
-    ["io-speech"]="http://localhost:8084/health"
-    ["io-vision"]="http://localhost:8086/health"
-    ["io-core"]="http://localhost:8085/health"
-    ["inference"]="http://localhost:8087/health"
-    ["storage"]="http://localhost:8082/health"
+    ["auth"]="http://localhost:${AUTH_HOST_PORT:-8083}/health"
+    ["context"]="http://localhost:${CONTEXT_HOST_PORT:-8081}/health"
+    ["policy"]="http://localhost:${POLICY_HOST_PORT:-8095}/health"
+    ["orchestrator"]="http://localhost:${ORCHESTRATOR_HOST_PORT:-8090}/health"
+    ["intent-graph"]="http://localhost:${INTENT_GRAPH_HOST_PORT:-8080}/health"
+    ["context-graph"]="http://localhost:${CONTEXT_GRAPH_HOST_PORT:-8091}/healthz"
+    ["experience-renderer"]="http://localhost:${EXPERIENCE_RENDERER_HOST_PORT:-8092}/health"
+    ["agent-vdi"]="http://localhost:${AGENT_VDI_HOST_PORT:-8093}/health"
+    ["io-speech"]="http://localhost:${IO_SPEECH_HOST_PORT:-8084}/health"
+    ["io-vision"]="http://localhost:${IO_VISION_HOST_PORT:-8086}/health"
+    ["io-core"]="http://localhost:${IO_CORE_HOST_PORT:-8085}/health"
+    ["inference"]="http://localhost:${INFERENCE_HOST_PORT:-8087}/health"
+    ["storage"]="http://localhost:${STORAGE_HOST_PORT:-8082}/health"
 )
 
 # Infrastructure services
 declare -A INFRA=(
     ["redis"]="localhost:${REDIS_HOST_PORT:-6379}"
     ["postgres"]="localhost:${POSTGRES_HOST_PORT:-5432}"
-    ["nats"]="localhost:4222"
+    ["nats"]="localhost:${NATS_HOST_PORT:-4222}"
 )
 
 echo -e "${BLUE}🏥 Unison Platform - Health Check${NC}"
