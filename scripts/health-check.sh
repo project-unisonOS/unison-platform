@@ -7,10 +7,10 @@ set -euo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 REPO_ROOT=$(cd -- "${SCRIPT_DIR}/.." && pwd)
 if [[ -f "${REPO_ROOT}/.env" ]]; then
-    set -a
-    # shellcheck disable=SC1091
-    . "${REPO_ROOT}/.env"
-    set +a
+    while IFS='=' read -r key value; do
+        [[ -z "${key}" || "${key}" =~ ^[[:space:]]*# ]] && continue
+        export "${key}"="${value}"
+    done < "${REPO_ROOT}/.env"
 fi
 
 # Colors for output
@@ -29,7 +29,7 @@ declare -A SERVICES=(
     ["intent-graph"]="http://localhost:${INTENT_GRAPH_HOST_PORT:-8080}/health"
     ["context-graph"]="http://localhost:${CONTEXT_GRAPH_HOST_PORT:-8091}/healthz"
     ["experience-renderer"]="http://localhost:${EXPERIENCE_RENDERER_HOST_PORT:-8092}/health"
-    ["agent-vdi"]="http://localhost:${AGENT_VDI_HOST_PORT:-8093}/health"
+    ["agent-vdi"]="http://localhost:${AGENT_VDI_HOST_PORT:-8093}/readyz"
     ["io-speech"]="http://localhost:${IO_SPEECH_HOST_PORT:-8084}/health"
     ["io-vision"]="http://localhost:${IO_VISION_HOST_PORT:-8086}/health"
     ["io-core"]="http://localhost:${IO_CORE_HOST_PORT:-8085}/health"

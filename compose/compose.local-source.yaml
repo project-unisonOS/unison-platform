@@ -1,0 +1,12 @@
+services:
+  auth:
+    build:
+      context: ../../unison-auth
+
+  orchestrator:
+    build:
+      context: ../../unison-orchestrator
+
+  experience-renderer:
+    build:
+      context: ../../unison-experience-renderer

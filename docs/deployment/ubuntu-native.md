@@ -96,6 +96,24 @@ curl -X POST http://localhost:8083/bootstrap/admin \
 
 This is a one-time bootstrap path. Once an active admin exists, bootstrap closes and ongoing user creation must happen through authenticated admin flows.
 
+## Local Source Bring-Up
+
+For active development on Ubuntu 24.04, use the local-source path instead of relying on published `latest` images for `unison-auth`, `unison-orchestrator`, and `unison-experience-renderer`.
+
+From the workspace copy of `unison-platform`:
+
+```bash
+make up-local
+```
+
+That workflow:
+
+- builds `ghcr.io/project-unisonos/unison-common-wheel:latest` from local `unison-common`
+- builds local source images for `unison-auth`, `unison-orchestrator`, and `unison-experience-renderer`
+- starts the stack with `compose/compose.local-source.yaml`
+
+The `updates` service is not part of the default bring-up yet. It remains behind the optional `updates` compose profile until the `unison-updates` implementation exists locally and in GHCR.
+
 ## Verify The Install
 
 Check the service:
@@ -120,6 +138,19 @@ If the stack does not come up cleanly, inspect logs:
 sudo unisonctl logs
 sudo unisonctl logs orchestrator
 ```
+
+For local-source development validation, run:
+
+```bash
+make validate-golden
+```
+
+That script checks:
+
+- inference readiness and selected model
+- auth bootstrap status and first-admin presence
+- orchestrator startup convergence
+- renderer onboarding convergence
 
 ## Operations And Recovery
 

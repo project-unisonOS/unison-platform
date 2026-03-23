@@ -1,6 +1,5 @@
 # Unison Platform - Complete Service Stack
 # This compose file defines the runtime topology for all Unison services
-version: '3.8'
 
 services:
   # Infrastructure Services
@@ -59,7 +58,7 @@ services:
 
   # Core Services
   auth:
-    image: ghcr.io/project-unisonos/unison-auth:main
+    image: ghcr.io/project-unisonos/unison-auth:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${AUTH_HOST_PORT:-8083}:8088"
@@ -86,7 +85,7 @@ services:
       - unison-network
 
   context:
-    image: ghcr.io/project-unisonos/unison-context:main
+    image: ghcr.io/project-unisonos/unison-context:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${CONTEXT_HOST_PORT:-8081}:8081"
@@ -116,7 +115,7 @@ services:
       - unison-network
 
   policy:
-    image: ghcr.io/project-unisonos/unison-policy:main
+    image: ghcr.io/project-unisonos/unison-policy:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${POLICY_HOST_PORT:-8095}:8083"
@@ -136,7 +135,7 @@ services:
       auth:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8083/readyz"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -144,7 +143,7 @@ services:
       - unison-network
 
   orchestrator:
-    image: ghcr.io/project-unisonos/unison-orchestrator:main
+    image: ghcr.io/project-unisonos/unison-orchestrator:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${ORCHESTRATOR_HOST_PORT:-8090}:8080"
@@ -156,6 +155,8 @@ services:
       CONTEXT_URL: http://context:8081
       POLICY_URL: http://policy:8083
       AUTH_URL: http://auth:8088
+      UNISON_AUTH_URL: http://auth:8088
+      UNISON_RENDERER_URL: http://experience-renderer:8082
       REDIS_HOST: redis
       NATS_HOST: nats
       INTENT_GRAPH_URL: http://intent-graph:8080
@@ -186,9 +187,9 @@ services:
       - unison-network
 
   updates:
-    build:
-      context: ../../unison-updates
-    image: ghcr.io/project-unisonos/unison-updates:main
+    image: ghcr.io/project-unisonos/unison-updates:${UNISON_IMAGE_TAG:-latest}
+    profiles:
+      - updates
     restart: unless-stopped
     ports:
       - "${UPDATES_HOST_PORT:-8094}:8089"
@@ -216,7 +217,7 @@ services:
 
   # Intent Orchestration Services
   intent-graph:
-    image: ghcr.io/project-unisonos/unison-intent-graph:main
+    image: ghcr.io/project-unisonos/unison-intent-graph:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${INTENT_GRAPH_HOST_PORT:-8080}:8080"
@@ -242,7 +243,7 @@ services:
       - unison-network
 
   context-graph:
-    image: ghcr.io/project-unisonos/unison-context-graph:main
+    image: ghcr.io/project-unisonos/unison-context-graph:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${CONTEXT_GRAPH_HOST_PORT:-8091}:8081"
@@ -270,7 +271,7 @@ services:
       - unison-network
 
   experience-renderer:
-    image: ghcr.io/project-unisonos/unison-experience-renderer:main
+    image: ghcr.io/project-unisonos/unison-experience-renderer:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${EXPERIENCE_RENDERER_HOST_PORT:-8092}:8082"
@@ -281,7 +282,9 @@ services:
       SERVICE_PORT: 8082
       INTENT_GRAPH_URL: http://intent-graph:8080
       CONTEXT_GRAPH_URL: http://context-graph:8081
-      ORCHESTRATOR_URL: http://orchestrator:8080
+      ORCHESTRATOR_BASE_URL: http://orchestrator:8080
+      SPEECH_BASE_URL: http://io-speech:8084
+      INFERENCE_BASE_URL: http://inference:8087
       REDIS_HOST: redis
     depends_on:
       intent-graph:
@@ -301,7 +304,7 @@ services:
       - unison-network
 
   agent-vdi:
-    image: ghcr.io/project-unisonos/unison-agent-vdi:main
+    image: ghcr.io/project-unisonos/unison-agent-vdi:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${AGENT_VDI_HOST_PORT:-8093}:8083"
@@ -327,7 +330,7 @@ services:
     cap_add:
       - SYS_ADMIN
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8083/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8083/readyz"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -336,7 +339,7 @@ services:
 
   # I/O Services
   io-speech:
-    image: ghcr.io/project-unisonos/unison-io-speech:main
+    image: ghcr.io/project-unisonos/unison-io-speech:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${IO_SPEECH_HOST_PORT:-8084}:8084"
@@ -361,7 +364,7 @@ services:
       - unison-network
 
   io-vision:
-    image: ghcr.io/project-unisonos/unison-io-vision:main
+    image: ghcr.io/project-unisonos/unison-io-vision:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${IO_VISION_HOST_PORT:-8086}:8086"
@@ -386,7 +389,7 @@ services:
       - unison-network
 
   io-core:
-    image: ghcr.io/project-unisonos/unison-io-core:main
+    image: ghcr.io/project-unisonos/unison-io-core:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${IO_CORE_HOST_PORT:-8085}:8085"
@@ -418,7 +421,7 @@ services:
 
   # Inference Services
   inference:
-    image: ghcr.io/project-unisonos/unison-inference:main
+    image: ghcr.io/project-unisonos/unison-inference:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${INFERENCE_HOST_PORT:-8087}:8087"
@@ -451,7 +454,7 @@ services:
 
   # Infrastructure Services
   storage:
-    image: ghcr.io/project-unisonos/unison-storage:main
+    image: ghcr.io/project-unisonos/unison-storage:${UNISON_IMAGE_TAG:-latest}
     restart: unless-stopped
     ports:
       - "${STORAGE_HOST_PORT:-8082}:8082"

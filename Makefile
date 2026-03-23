@@ -1,13 +1,14 @@
-﻿# Unison Platform - Developer Experience Makefile
+# Unison Platform - Developer Experience Makefile
 # Provides one-command orchestration for the entire Unison stack
 
-.PHONY: help up down logs test-int pin clean status observability dev prod
+.PHONY: help up up-local down logs test-int pin clean status observability dev prod build-local validate-golden
 .PHONY: image-wsl image-vm image-iso baremetal-iso linux-vm qa-smoke
 
 # Default environment
 ENV ?= dev
 PROFILE ?= $(ENV)
-COMPOSE := docker compose --env-file .env -f compose/compose.yaml --profile $(PROFILE)
+COMPOSE_FILES ?= -f compose/compose.yaml
+COMPOSE := docker compose --env-file .env $(COMPOSE_FILES) --profile $(PROFILE)
 
 # Colors for output
 BLUE := \033[36m
@@ -31,7 +32,7 @@ up: ## Start the Unison stack
 	@echo "   - Intent Graph:     http://localhost:8080/health"
 	@echo "   - Context Graph:    http://localhost:8091/health"
 	@echo "   - Experience Rendr: http://localhost:8092/health"
-	@echo "   - Agent VDI:        http://localhost:8093/health"
+	@echo "   - Agent VDI:        http://localhost:8093/readyz"
 	@echo "   - Auth Service:     http://localhost:8083/health"
 	@echo "   - Context Service:  http://localhost:8081/health"
 	@echo "   - Policy Service:   http://localhost:8095/health"
@@ -46,6 +47,14 @@ up: ## Start the Unison stack
 		echo "   - Prometheus:       http://localhost:9090"; \
 		echo "   - Grafana:          http://localhost:3000 (admin/admin)"; \
 	fi
+
+up-local: ## Build local source images and start the stack from workspace sources
+	@echo "$(BLUE)Building local-source runtime images...$(RESET)"
+	@./scripts/build-local-images.sh
+	@echo "$(BLUE)Starting Unison platform from local sources ($(ENV))...$(RESET)"
+	@mkdir -p logs
+	@docker compose --env-file .env -f compose/compose.yaml -f compose/compose.local-source.yaml --profile $(PROFILE) up -d --wait
+	@echo "$(GREEN)Local-source stack is ready$(RESET)"
 
 down: ## Stop the Unison stack
 	@echo "$(BLUE)Stopping Unison platform...$(RESET)"
@@ -116,6 +125,11 @@ health: ## Check health of all services
 	@./scripts/health-check.sh
 	@echo "$(GREEN)Health check completed$(RESET)"
 
+validate-golden: ## Validate the first-run golden path against the live stack
+	@echo "$(BLUE)Validating golden path...$(RESET)"
+	@./scripts/validate-golden-path.sh
+	@echo "$(GREEN)Golden path validated$(RESET)"
+
 restart: ## Restart all services
 	@echo "$(BLUE)Restarting services...$(RESET)"
 	@$(COMPOSE) restart
@@ -150,6 +164,11 @@ build: ## Build all services
 	@echo "$(BLUE)Building all services...$(RESET)"
 	@$(COMPOSE) build --parallel
 	@echo "$(GREEN)Build completed$(RESET)"
+
+build-local: ## Build the local-source images used by up-local
+	@echo "$(BLUE)Building local-source images...$(RESET)"
+	@./scripts/build-local-images.sh
+	@echo "$(GREEN)Local-source images built$(RESET)"
 
 pull: ## Pull latest images
 	@echo "$(BLUE)Pulling latest images...$(RESET)"
