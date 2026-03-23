@@ -318,7 +318,11 @@ def test_updates_policy_and_plan_flow():
     assert rollback_resp.status_code == 200, rollback_resp.text
     rollback_body = rollback_resp.json() or {}
     assert rollback_body.get("ok") is True
+    assert isinstance(rollback_body.get("history_count"), int)
+    assert rollback_body.get("history_count") >= 1
     assert ((rollback_body.get("last_attempted_target") or {}).get("target_release") or {}).get("platform_version") == manifest.get("release_version")
+    assert isinstance((rollback_body.get("target") or {}).get("platform_version"), str)
+    assert (rollback_body.get("target") or {}).get("platform_version")
 
     restore_resp = requests.post(
         f"{UPDATES_BASE}/v1/tools/updates.set_policy",
