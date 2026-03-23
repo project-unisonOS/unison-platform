@@ -241,6 +241,10 @@ def test_updates_policy_and_plan_flow():
     manifest = catalog.get("manifest") or {}
     assert manifest.get("schema_version") == "unison.platform.release.manifest.v1"
     assert isinstance(manifest.get("release_version"), str) and manifest.get("release_version")
+    resolved_images = manifest.get("images_resolved") or {}
+    assert "updates" in resolved_images
+    assert isinstance((resolved_images.get("updates") or {}).get("image_id"), str)
+    assert (resolved_images.get("updates") or {}).get("image_id")
 
     get_resp = requests.post(f"{UPDATES_BASE}/v1/tools/updates.get_policy", json={"arguments": {}}, timeout=5)
     assert get_resp.status_code == 200, get_resp.text
@@ -275,6 +279,7 @@ def test_updates_policy_and_plan_flow():
     plan_id = plan_body.get("plan_id")
     assert isinstance(plan_id, str) and plan_id
     assert plan_body.get("source_manifest_version") == manifest.get("release_version")
+    assert (plan_body.get("target_release") or {}).get("platform_version") == manifest.get("release_version")
 
     apply_resp = requests.post(
         f"{UPDATES_BASE}/v1/tools/updates.apply",
@@ -301,6 +306,19 @@ def test_updates_policy_and_plan_flow():
     assert status_body.get("status") == "completed"
     result = status_body.get("result") or {}
     assert result.get("mode") == "dry-run"
+    assert (result.get("target_release") or {}).get("platform_version") == manifest.get("release_version")
+    rollback_target = result.get("rollback_target") or {}
+    assert isinstance(rollback_target.get("platform_version"), str) and rollback_target.get("platform_version")
+
+    rollback_resp = requests.post(
+        f"{UPDATES_BASE}/v1/tools/updates.rollback",
+        json={"arguments": {}},
+        timeout=5,
+    )
+    assert rollback_resp.status_code == 200, rollback_resp.text
+    rollback_body = rollback_resp.json() or {}
+    assert rollback_body.get("ok") is True
+    assert ((rollback_body.get("last_attempted_target") or {}).get("target_release") or {}).get("platform_version") == manifest.get("release_version")
 
     restore_resp = requests.post(
         f"{UPDATES_BASE}/v1/tools/updates.set_policy",

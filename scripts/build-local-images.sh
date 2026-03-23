@@ -26,14 +26,15 @@ docker build \
     -t ghcr.io/project-unisonos/unison-common-wheel:latest \
     "${COMMON_REPO}"
 
-echo "[local-build] generating local release manifest"
-python3 "${PLATFORM_REPO}/scripts/generate_release_manifest.py" \
-    --version "local-dev" \
-    --out "${LOCAL_RELEASE_MANIFEST}"
-
 echo "[local-build] building auth, orchestrator, renderer, agent-vdi, and updates from workspace source"
 docker compose \
     --env-file "${PLATFORM_REPO}/.env" \
     -f "${PLATFORM_REPO}/compose/compose.yaml" \
     -f "${PLATFORM_REPO}/compose/compose.local-source.yaml" \
     build auth orchestrator experience-renderer agent-vdi updates
+
+echo "[local-build] generating local release manifest"
+python3 "${PLATFORM_REPO}/scripts/generate_release_manifest.py" \
+    --version "local-dev" \
+    --out "${LOCAL_RELEASE_MANIFEST}" \
+    --resolve-local-images

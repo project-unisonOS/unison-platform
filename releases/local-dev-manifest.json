@@ -27,17 +27,248 @@
       "storage": "ghcr.io/project-unisonos/unison-storage:${UNISON_IMAGE_TAG:-latest}",
       "updates": "ghcr.io/project-unisonos/unison-updates:${UNISON_IMAGE_TAG:-latest}"
     },
-    "images_pinned": {}
+    "images_pinned": {
+      "agent-vdi": "ghcr.io/project-unisonos/unison-agent-vdi:latest@sha256:681ecd4e37e1c28447d840f5188e735bca54436cd4461bb1d5f049999b689129",
+      "auth": "ghcr.io/project-unisonos/unison-auth:latest@sha256:8b544199d07e37128128316aa7e8966200f30d5a717a86ccfe3113347f3e02ff",
+      "context": "ghcr.io/project-unisonos/unison-context@sha256:d0ea8f2cf883ca8278479b64147ca7a2c903d9890d63417f8786d24a0d20db16",
+      "context-graph": "ghcr.io/project-unisonos/unison-context-graph@sha256:8d354fec2b286549a743075be05451b89840ef7c646e69bb0ad9651a8dc83ce3",
+      "experience-renderer": "ghcr.io/project-unisonos/unison-experience-renderer:latest@sha256:bc4821714feabd907b66ee23b5b94a6d24aa35310907bc17d83808eac1d65b2f",
+      "inference": "ghcr.io/project-unisonos/unison-inference@sha256:0d35f89ec538039921c737ac7bbf0183234b728343680d0eaaf278d053e8d8e2",
+      "intent-graph": "ghcr.io/project-unisonos/unison-intent-graph@sha256:57cc8709d4e2def7b52434c18a0e2f22c68915cc4b2d317fdb6c0fd6c823c216",
+      "io-core": "ghcr.io/project-unisonos/unison-io-core@sha256:7a0545975dfe094a66866dfbc2ad8bd9c710e38b2d0d1c8b7296de424bb7e49f",
+      "io-speech": "ghcr.io/project-unisonos/unison-io-speech@sha256:a519df1a0c3bafd9428ccde6f4c92f7096632318d7dce6868758459003197c9e",
+      "io-vision": "ghcr.io/project-unisonos/unison-io-vision@sha256:81c608504ff47d035169ce5e2e5a96e2039c5df6c90ec3ce1234bb14fda3bf0c",
+      "nats": "nats@sha256:b83efabe3e7def1e0a4a31ec6e078999bb17c80363f881df35edc70fcb6bb927",
+      "orchestrator": "ghcr.io/project-unisonos/unison-orchestrator:latest@sha256:9322c187e0aa913377600309960342ed16bb1b4f01c293d224ac002981d29ae6",
+      "policy": "ghcr.io/project-unisonos/unison-policy@sha256:1b31904098e7dfc4748a68cbd8bad40fe1b3527164830bcdeab26a3fae5d8d60",
+      "postgres": "postgres@sha256:fceb6f86328c36f2438fae3b851b0cc57c4a7e69a58c866d9ce24281f2cf0c9c",
+      "redis": "redis@sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065",
+      "storage": "ghcr.io/project-unisonos/unison-storage@sha256:c878a5ff72cb06bb6238153dfd1403e7573def3320048232a72d69d2713282b9",
+      "updates": "ghcr.io/project-unisonos/unison-updates:latest@sha256:d44220352c85952b2cd5ae422d8e7b6d3c3578a1e107945e502bad05e66a1a4c"
+    },
+    "images_resolved": {
+      "agent-vdi": {
+        "image_id": "sha256:681ecd4e37e1c28447d840f5188e735bca54436cd4461bb1d5f049999b689129",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-agent-vdi:latest@sha256:681ecd4e37e1c28447d840f5188e735bca54436cd4461bb1d5f049999b689129",
+        "repo_digests": [],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-agent-vdi:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-agent-vdi:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-agent-vdi:latest",
+        "source": "local-docker"
+      },
+      "auth": {
+        "image_id": "sha256:8b544199d07e37128128316aa7e8966200f30d5a717a86ccfe3113347f3e02ff",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-auth:latest@sha256:8b544199d07e37128128316aa7e8966200f30d5a717a86ccfe3113347f3e02ff",
+        "repo_digests": [],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-auth:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-auth:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-auth:latest",
+        "source": "local-docker"
+      },
+      "context": {
+        "image_id": "sha256:67ad15444d99e12f9a750b5179b8ecf576d2cfea3afe252339ef7b354cbe48aa",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-context@sha256:d0ea8f2cf883ca8278479b64147ca7a2c903d9890d63417f8786d24a0d20db16",
+        "repo_digests": [
+          "ghcr.io/project-unisonos/unison-context@sha256:d0ea8f2cf883ca8278479b64147ca7a2c903d9890d63417f8786d24a0d20db16"
+        ],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-context:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-context:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-context:latest",
+        "source": "local-docker"
+      },
+      "context-graph": {
+        "image_id": "sha256:f550d070de40a779e43fbdf72ea1740ed8632aeae83a0943fa0040c0ac5d912a",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-context-graph@sha256:8d354fec2b286549a743075be05451b89840ef7c646e69bb0ad9651a8dc83ce3",
+        "repo_digests": [
+          "ghcr.io/project-unisonos/unison-context-graph@sha256:8d354fec2b286549a743075be05451b89840ef7c646e69bb0ad9651a8dc83ce3"
+        ],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-context-graph:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-context-graph:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-context-graph:latest",
+        "source": "local-docker"
+      },
+      "experience-renderer": {
+        "image_id": "sha256:bc4821714feabd907b66ee23b5b94a6d24aa35310907bc17d83808eac1d65b2f",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-experience-renderer:latest@sha256:bc4821714feabd907b66ee23b5b94a6d24aa35310907bc17d83808eac1d65b2f",
+        "repo_digests": [],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-experience-renderer:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-experience-renderer:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-experience-renderer:latest",
+        "source": "local-docker"
+      },
+      "inference": {
+        "image_id": "sha256:77e33098fb9c607d24a9273f848f8a24df35a4dd429915125db8fb78c5a0b4e6",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-inference@sha256:0d35f89ec538039921c737ac7bbf0183234b728343680d0eaaf278d053e8d8e2",
+        "repo_digests": [
+          "ghcr.io/project-unisonos/unison-inference@sha256:0d35f89ec538039921c737ac7bbf0183234b728343680d0eaaf278d053e8d8e2"
+        ],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-inference:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-inference:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-inference:latest",
+        "source": "local-docker"
+      },
+      "intent-graph": {
+        "image_id": "sha256:1f27f5fc3fc51746a6fef237ad87674b35ea20655ea26bcfbbbe3dca60ce680e",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-intent-graph@sha256:57cc8709d4e2def7b52434c18a0e2f22c68915cc4b2d317fdb6c0fd6c823c216",
+        "repo_digests": [
+          "ghcr.io/project-unisonos/unison-intent-graph@sha256:57cc8709d4e2def7b52434c18a0e2f22c68915cc4b2d317fdb6c0fd6c823c216"
+        ],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-intent-graph:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-intent-graph:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-intent-graph:latest",
+        "source": "local-docker"
+      },
+      "io-core": {
+        "image_id": "sha256:225b85253efa75767f92452354475fc35e5cdf57051541fa678b6aa0cca9d83a",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-io-core@sha256:7a0545975dfe094a66866dfbc2ad8bd9c710e38b2d0d1c8b7296de424bb7e49f",
+        "repo_digests": [
+          "ghcr.io/project-unisonos/unison-io-core@sha256:7a0545975dfe094a66866dfbc2ad8bd9c710e38b2d0d1c8b7296de424bb7e49f"
+        ],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-io-core:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-io-core:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-io-core:latest",
+        "source": "local-docker"
+      },
+      "io-speech": {
+        "image_id": "sha256:4da2987dfc245c3cae9e3e5cf787f966a16bee581533a93cb4f87d2ef9b701c8",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-io-speech@sha256:a519df1a0c3bafd9428ccde6f4c92f7096632318d7dce6868758459003197c9e",
+        "repo_digests": [
+          "ghcr.io/project-unisonos/unison-io-speech@sha256:a519df1a0c3bafd9428ccde6f4c92f7096632318d7dce6868758459003197c9e"
+        ],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-io-speech:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-io-speech:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-io-speech:latest",
+        "source": "local-docker"
+      },
+      "io-vision": {
+        "image_id": "sha256:7c91d501583398a437a52911e850c0141b4282ed9f9d5a2b29cd5461f67e230c",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-io-vision@sha256:81c608504ff47d035169ce5e2e5a96e2039c5df6c90ec3ce1234bb14fda3bf0c",
+        "repo_digests": [
+          "ghcr.io/project-unisonos/unison-io-vision@sha256:81c608504ff47d035169ce5e2e5a96e2039c5df6c90ec3ce1234bb14fda3bf0c"
+        ],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-io-vision:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-io-vision:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-io-vision:latest",
+        "source": "local-docker"
+      },
+      "nats": {
+        "image_id": "sha256:8b9f712ae2148dcbd9d7f3d16a942d515e290526e5d018500931eab62b18e045",
+        "pinned_ref": "nats@sha256:b83efabe3e7def1e0a4a31ec6e078999bb17c80363f881df35edc70fcb6bb927",
+        "repo_digests": [
+          "nats@sha256:b83efabe3e7def1e0a4a31ec6e078999bb17c80363f881df35edc70fcb6bb927"
+        ],
+        "repo_tags": [
+          "nats:2.10-alpine"
+        ],
+        "requested_ref": "nats:2.10-alpine",
+        "resolved_ref": "nats:2.10-alpine",
+        "source": "local-docker"
+      },
+      "orchestrator": {
+        "image_id": "sha256:9322c187e0aa913377600309960342ed16bb1b4f01c293d224ac002981d29ae6",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-orchestrator:latest@sha256:9322c187e0aa913377600309960342ed16bb1b4f01c293d224ac002981d29ae6",
+        "repo_digests": [],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-orchestrator:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-orchestrator:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-orchestrator:latest",
+        "source": "local-docker"
+      },
+      "policy": {
+        "image_id": "sha256:e4648d2ed8b8ff69da78f15e46c30f0f0d1c6efcabd48fe3849e371ace477b69",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-policy@sha256:1b31904098e7dfc4748a68cbd8bad40fe1b3527164830bcdeab26a3fae5d8d60",
+        "repo_digests": [
+          "ghcr.io/project-unisonos/unison-policy@sha256:1b31904098e7dfc4748a68cbd8bad40fe1b3527164830bcdeab26a3fae5d8d60"
+        ],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-policy:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-policy:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-policy:latest",
+        "source": "local-docker"
+      },
+      "postgres": {
+        "image_id": "sha256:cd848ee12e8efaf62a09b7e7290a287c21f332a32779048afb970d497374bb04",
+        "pinned_ref": "postgres@sha256:fceb6f86328c36f2438fae3b851b0cc57c4a7e69a58c866d9ce24281f2cf0c9c",
+        "repo_digests": [
+          "postgres@sha256:fceb6f86328c36f2438fae3b851b0cc57c4a7e69a58c866d9ce24281f2cf0c9c"
+        ],
+        "repo_tags": [
+          "postgres:15-alpine"
+        ],
+        "requested_ref": "postgres:15-alpine",
+        "resolved_ref": "postgres:15-alpine",
+        "source": "local-docker"
+      },
+      "redis": {
+        "image_id": "sha256:aa189b5a1954929c393585e6dc5717a75b18f75a931df8bdcc00a3d3bd546be6",
+        "pinned_ref": "redis@sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065",
+        "repo_digests": [
+          "redis@sha256:8b81dd37ff027bec4e516d41acfbe9fe2460070dc6d4a4570a2ac5b9d59df065"
+        ],
+        "repo_tags": [
+          "redis:7-alpine"
+        ],
+        "requested_ref": "redis:7-alpine",
+        "resolved_ref": "redis:7-alpine",
+        "source": "local-docker"
+      },
+      "storage": {
+        "image_id": "sha256:d41349fffef30c781347a12466f056456fe82f1561167a39d020b27f0f7dffb1",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-storage@sha256:c878a5ff72cb06bb6238153dfd1403e7573def3320048232a72d69d2713282b9",
+        "repo_digests": [
+          "ghcr.io/project-unisonos/unison-storage@sha256:c878a5ff72cb06bb6238153dfd1403e7573def3320048232a72d69d2713282b9"
+        ],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-storage:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-storage:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-storage:latest",
+        "source": "local-docker"
+      },
+      "updates": {
+        "image_id": "sha256:d44220352c85952b2cd5ae422d8e7b6d3c3578a1e107945e502bad05e66a1a4c",
+        "pinned_ref": "ghcr.io/project-unisonos/unison-updates:latest@sha256:d44220352c85952b2cd5ae422d8e7b6d3c3578a1e107945e502bad05e66a1a4c",
+        "repo_digests": [],
+        "repo_tags": [
+          "ghcr.io/project-unisonos/unison-updates:latest"
+        ],
+        "requested_ref": "ghcr.io/project-unisonos/unison-updates:${UNISON_IMAGE_TAG:-latest}",
+        "resolved_ref": "ghcr.io/project-unisonos/unison-updates:latest",
+        "source": "local-docker"
+      }
+    }
   },
   "model_packs": {
     "default_profile": "alpha/default",
     "profile_manifest_sha256": "b8203860f7db7d75116a83769d046396488cf4b626676399141c25b8d3135198"
   },
   "release": {
-    "built_at": "2026-03-23T23:32:51Z",
+    "built_at": "2026-03-23T23:43:00Z",
     "channel": "stable",
     "git": {
-      "commit": "baf628b908d311701c27f70ada7c7aab413a5dd4",
+      "commit": "a4571dceb4395ddec1eb8e4ad36345a3070f0a75",
       "repo": "unison-platform"
     },
     "version": "local-dev"

@@ -5,6 +5,7 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import subprocess
 from dataclasses import dataclass
 from datetime import datetime, timezone
@@ -80,12 +81,66 @@ def _parse_compose_images(compose_path: Path) -> dict[str, str]:
     return images
 
 
+_ENV_EXPR = re.compile(r"\$\{([^}:]+)(?:(:?[-])([^}]*))?\}")
+
+
+def _expand_env_ref(value: str) -> str:
+    def repl(match: re.Match[str]) -> str:
+        name = match.group(1)
+        operator = match.group(2) or ""
+        default = match.group(3) or ""
+        current = os.getenv(name)
+        if operator in {":-", "-"}:
+            return current if current not in {None, ""} else default
+        return current or ""
+
+    return _ENV_EXPR.sub(repl, value)
+
+
+def _resolve_local_images(images: dict[str, str]) -> dict[str, dict[str, Any]]:
+    resolved: dict[str, dict[str, Any]] = {}
+    for service, requested_ref in images.items():
+        expanded_ref = _expand_env_ref(requested_ref)
+        try:
+            raw = subprocess.check_output(
+                ["docker", "image", "inspect", expanded_ref],
+                text=True,
+                stderr=subprocess.DEVNULL,
+            )
+        except Exception:
+            continue
+        try:
+            payload = json.loads(raw)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(payload, list) or not payload:
+            continue
+        image = payload[0] if isinstance(payload[0], dict) else {}
+        image_id = str(image.get("Id") or "")
+        repo_digests = [str(v) for v in (image.get("RepoDigests") or []) if str(v).strip()]
+        repo_tags = [str(v) for v in (image.get("RepoTags") or []) if str(v).strip()]
+        pinned_ref = repo_digests[0] if repo_digests else ""
+        if not pinned_ref and image_id.startswith("sha256:"):
+            pinned_ref = f"{expanded_ref}@{image_id}"
+        resolved[service] = {
+            "requested_ref": requested_ref,
+            "resolved_ref": expanded_ref,
+            "pinned_ref": pinned_ref,
+            "image_id": image_id,
+            "repo_digests": repo_digests,
+            "repo_tags": repo_tags,
+            "source": "local-docker",
+        }
+    return resolved
+
+
 @dataclass(frozen=True)
 class Args:
     version: str
     out: Path
     compose_file: Path
     artifacts_lock: Path | None
+    resolve_local_images: bool
     model_pack_profile: str
     model_pack_manifest: Path
     assets_dir: Path | None
@@ -97,6 +152,11 @@ def main() -> int:
     parser.add_argument("--out", required=True, help="Output manifest path (json)")
     parser.add_argument("--compose-file", default="compose/compose.yaml", help="Compose file to hash and parse for image refs")
     parser.add_argument("--artifacts-lock", default="artifacts.lock", help="Optional artifacts.lock with pinned digests")
+    parser.add_argument(
+        "--resolve-local-images",
+        action="store_true",
+        help="Resolve compose image refs against the local Docker daemon and record image IDs/digests",
+    )
     parser.add_argument("--model-pack-profile", default="alpha/default", help="Default model pack profile name")
     parser.add_argument(
         "--model-pack-manifest",
@@ -111,6 +171,7 @@ def main() -> int:
         out=Path(ns.out),
         compose_file=(Path(ns.compose_file) if str(ns.compose_file).strip() else Path("compose/compose.yaml")),
         artifacts_lock=(Path(ns.artifacts_lock) if str(ns.artifacts_lock).strip() else None),
+        resolve_local_images=bool(ns.resolve_local_images),
         model_pack_profile=str(ns.model_pack_profile),
         model_pack_manifest=Path(ns.model_pack_manifest),
         assets_dir=Path(ns.assets_dir).resolve() if str(ns.assets_dir).strip() else None,
@@ -139,6 +200,13 @@ def main() -> int:
 
     pinned_images = _parse_artifacts_lock(args.artifacts_lock) if args.artifacts_lock else {}
     compose_images = _parse_compose_images(args.compose_file) if args.compose_file.exists() else {}
+    resolved_images = _resolve_local_images(compose_images) if args.resolve_local_images else {}
+    if not pinned_images and resolved_images:
+        pinned_images = {
+            service: meta["pinned_ref"]
+            for service, meta in resolved_images.items()
+            if isinstance(meta, dict) and str(meta.get("pinned_ref") or "").strip()
+        }
 
     model_pack_hash = _sha256_file(args.model_pack_manifest) if args.model_pack_manifest.exists() else ""
 
@@ -162,6 +230,7 @@ def main() -> int:
             "files": compose_hashes,
             "images_from_compose": compose_images,
             "images_pinned": pinned_images,
+            "images_resolved": resolved_images,
         },
         "model_packs": {
             "default_profile": args.model_pack_profile,
