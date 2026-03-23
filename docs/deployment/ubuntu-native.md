@@ -118,6 +118,10 @@ The `updates` service remains behind the optional `updates` compose profile. Inc
 PROFILE=updates make up-local
 ```
 
+When enabled through the local-source path, `unison-updates` reads the generated local release manifest at:
+
+- `unison-platform/releases/local-dev-manifest.json`
+
 ## Verify The Install
 
 Check the service:

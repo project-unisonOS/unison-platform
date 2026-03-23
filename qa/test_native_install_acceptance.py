@@ -233,6 +233,15 @@ def test_updates_policy_and_plan_flow():
 
     _wait_http_ok(f"{UPDATES_BASE}/health")
 
+    check_resp = requests.post(f"{UPDATES_BASE}/v1/tools/updates.check", json={"arguments": {}}, timeout=5)
+    assert check_resp.status_code == 200, check_resp.text
+    check_body = check_resp.json() or {}
+    assert check_body.get("ok") is True
+    catalog = check_body.get("catalog") or {}
+    manifest = catalog.get("manifest") or {}
+    assert manifest.get("schema_version") == "unison.platform.release.manifest.v1"
+    assert isinstance(manifest.get("release_version"), str) and manifest.get("release_version")
+
     get_resp = requests.post(f"{UPDATES_BASE}/v1/tools/updates.get_policy", json={"arguments": {}}, timeout=5)
     assert get_resp.status_code == 200, get_resp.text
     original_policy = (get_resp.json() or {}).get("policy") or {}
@@ -265,6 +274,7 @@ def test_updates_policy_and_plan_flow():
     assert plan_body.get("requires_confirmation") is True
     plan_id = plan_body.get("plan_id")
     assert isinstance(plan_id, str) and plan_id
+    assert plan_body.get("source_manifest_version") == manifest.get("release_version")
 
     apply_resp = requests.post(
         f"{UPDATES_BASE}/v1/tools/updates.apply",

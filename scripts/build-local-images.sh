@@ -8,6 +8,7 @@ WORKSPACE_ROOT=$(cd -- "${REPO_ROOT}/.." && pwd)
 
 COMMON_REPO="${WORKSPACE_ROOT}/unison-common"
 PLATFORM_REPO="${WORKSPACE_ROOT}/unison-platform"
+LOCAL_RELEASE_MANIFEST="${PLATFORM_REPO}/releases/local-dev-manifest.json"
 
 if [[ ! -d "${COMMON_REPO}" ]]; then
     echo "[local-build] missing repo: ${COMMON_REPO}" >&2
@@ -24,6 +25,11 @@ docker build \
     -f "${COMMON_REPO}/Dockerfile.wheel" \
     -t ghcr.io/project-unisonos/unison-common-wheel:latest \
     "${COMMON_REPO}"
+
+echo "[local-build] generating local release manifest"
+python3 "${PLATFORM_REPO}/scripts/generate_release_manifest.py" \
+    --version "local-dev" \
+    --out "${LOCAL_RELEASE_MANIFEST}"
 
 echo "[local-build] building auth, orchestrator, renderer, agent-vdi, and updates from workspace source"
 docker compose \

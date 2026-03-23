@@ -18,3 +18,7 @@ services:
   updates:
     build:
       context: ../../unison-updates
+    environment:
+      UNISON_UPDATES_MANIFEST_PATH: /opt/unison/releases/local-dev-manifest.json
+    volumes:
+      - ../releases:/opt/unison/releases:ro

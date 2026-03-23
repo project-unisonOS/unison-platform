@@ -1,0 +1,52 @@
+{
+  "assets": {},
+  "compose": {
+    "files": {
+      "/home/darryl-adams/project-unisonOS/unison-platform/compose/compose.yaml": "0c835ed6a3b722a1bf32997fa7b1a6ac2d169a64f027d5b9455b5d22ee5491be",
+      "/home/darryl-adams/project-unisonOS/unison-platform/docker-compose.prod.yml": "33576239e2d2aaccf772d80565d7e3535cf4f25c718d050e2e40be410097c3a7"
+    },
+    "images_from_compose": {
+      "agent-vdi": "ghcr.io/project-unisonos/unison-agent-vdi:${UNISON_IMAGE_TAG:-latest}",
+      "auth": "ghcr.io/project-unisonos/unison-auth:${UNISON_IMAGE_TAG:-latest}",
+      "context": "ghcr.io/project-unisonos/unison-context:${UNISON_IMAGE_TAG:-latest}",
+      "context-graph": "ghcr.io/project-unisonos/unison-context-graph:${UNISON_IMAGE_TAG:-latest}",
+      "experience-renderer": "ghcr.io/project-unisonos/unison-experience-renderer:${UNISON_IMAGE_TAG:-latest}",
+      "grafana": "grafana/grafana:latest",
+      "inference": "ghcr.io/project-unisonos/unison-inference:${UNISON_IMAGE_TAG:-latest}",
+      "intent-graph": "ghcr.io/project-unisonos/unison-intent-graph:${UNISON_IMAGE_TAG:-latest}",
+      "io-core": "ghcr.io/project-unisonos/unison-io-core:${UNISON_IMAGE_TAG:-latest}",
+      "io-speech": "ghcr.io/project-unisonos/unison-io-speech:${UNISON_IMAGE_TAG:-latest}",
+      "io-vision": "ghcr.io/project-unisonos/unison-io-vision:${UNISON_IMAGE_TAG:-latest}",
+      "jaeger": "jaegertracing/all-in-one:latest",
+      "nats": "nats:2.10-alpine",
+      "orchestrator": "ghcr.io/project-unisonos/unison-orchestrator:${UNISON_IMAGE_TAG:-latest}",
+      "policy": "ghcr.io/project-unisonos/unison-policy:${UNISON_IMAGE_TAG:-latest}",
+      "postgres": "postgres:15-alpine",
+      "prometheus": "prom/prometheus:latest",
+      "redis": "redis:7-alpine",
+      "storage": "ghcr.io/project-unisonos/unison-storage:${UNISON_IMAGE_TAG:-latest}",
+      "updates": "ghcr.io/project-unisonos/unison-updates:${UNISON_IMAGE_TAG:-latest}"
+    },
+    "images_pinned": {}
+  },
+  "model_packs": {
+    "default_profile": "alpha/default",
+    "profile_manifest_sha256": "b8203860f7db7d75116a83769d046396488cf4b626676399141c25b8d3135198"
+  },
+  "release": {
+    "built_at": "2026-03-23T23:32:51Z",
+    "channel": "stable",
+    "git": {
+      "commit": "baf628b908d311701c27f70ada7c7aab413a5dd4",
+      "repo": "unison-platform"
+    },
+    "version": "local-dev"
+  },
+  "requirements": {
+    "cpu_cores_min": 4,
+    "disk_gb_min": 20,
+    "notes": "Alpha sizing; increase RAM/disk for larger Qwen variants and additional packs.",
+    "ram_gb_min": 8
+  },
+  "schema_version": "unison.platform.release.manifest.v1"
+}
