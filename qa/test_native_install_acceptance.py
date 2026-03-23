@@ -25,6 +25,7 @@ AUTH_BASE = os.environ.get("AUTH_BASE_URL", "http://localhost:8083")
 CONTEXT_BASE = os.environ.get("CONTEXT_BASE_URL", "http://localhost:8081")
 AGENT_VDI_BASE = os.environ.get("AGENT_VDI_BASE_URL", "http://localhost:8093")
 STORAGE_BASE = os.environ.get("STORAGE_BASE_URL", "http://localhost:8082")
+UPDATES_BASE = os.environ.get("UPDATES_BASE_URL", "http://localhost:8094")
 MILESTONE1_USERNAME = os.environ.get("MILESTONE1_ACCEPTANCE_USERNAME")
 MILESTONE1_PASSWORD = os.environ.get("MILESTONE1_ACCEPTANCE_PASSWORD")
 MILESTONE1_PERSON_ID = os.environ.get("MILESTONE1_ACCEPTANCE_PERSON_ID", "local-person")
@@ -58,6 +59,14 @@ def _wait_http_ok(url: str, *, timeout: float = 15.0) -> None:
             last_error = str(exc)
         time.sleep(0.5)
     raise AssertionError(f"{url} did not become ready: {last_error}")
+
+
+def _updates_available() -> bool:
+    try:
+        resp = requests.get(f"{UPDATES_BASE}/health", timeout=3)
+        return resp.status_code == 200
+    except Exception:  # noqa: BLE001
+        return False
 
 
 def test_unisonctl_doctor_passes():
@@ -216,3 +225,76 @@ def test_vdi_download_returns_artifact_ids():
         for item in last_events
         if isinstance(item, dict)
     ), last_events
+
+
+def test_updates_policy_and_plan_flow():
+    if not _updates_available():
+        pytest.skip("updates profile is not running on this stack")
+
+    _wait_http_ok(f"{UPDATES_BASE}/health")
+
+    get_resp = requests.post(f"{UPDATES_BASE}/v1/tools/updates.get_policy", json={"arguments": {}}, timeout=5)
+    assert get_resp.status_code == 200, get_resp.text
+    original_policy = (get_resp.json() or {}).get("policy") or {}
+    original_auto_apply = original_policy.get("auto_apply", "manual")
+
+    set_resp = requests.post(
+        f"{UPDATES_BASE}/v1/tools/updates.set_policy",
+        json={"arguments": {"policy_patch": {"auto_apply": "security_only"}}},
+        timeout=5,
+    )
+    assert set_resp.status_code == 200, set_resp.text
+    set_body = set_resp.json() or {}
+    assert set_body.get("ok") is True
+    assert (set_body.get("policy") or {}).get("auto_apply") == "security_only"
+
+    plan_resp = requests.post(
+        f"{UPDATES_BASE}/v1/tools/updates.plan",
+        json={
+            "arguments": {
+                "person_id": MILESTONE1_PERSON_ID,
+                "selection": {"platform_version": "alpha-next"},
+                "constraints": {"approved": True},
+            }
+        },
+        timeout=5,
+    )
+    assert plan_resp.status_code == 200, plan_resp.text
+    plan_body = plan_resp.json() or {}
+    assert plan_body.get("ok") is True
+    assert plan_body.get("requires_confirmation") is True
+    plan_id = plan_body.get("plan_id")
+    assert isinstance(plan_id, str) and plan_id
+
+    apply_resp = requests.post(
+        f"{UPDATES_BASE}/v1/tools/updates.apply",
+        json={"arguments": {"plan_id": plan_id, "person_id": MILESTONE1_PERSON_ID}},
+        timeout=5,
+    )
+    assert apply_resp.status_code == 200, apply_resp.text
+    apply_body = apply_resp.json() or {}
+    assert apply_body.get("ok") is True
+    job_id = apply_body.get("job_id")
+    assert isinstance(job_id, str) and job_id
+    assert apply_body.get("status") == "completed"
+
+    status_resp = requests.post(
+        f"{UPDATES_BASE}/v1/tools/updates.status",
+        json={"arguments": {"job_id": job_id}},
+        timeout=5,
+    )
+    assert status_resp.status_code == 200, status_resp.text
+    status_body = status_resp.json() or {}
+    assert status_body.get("ok") is True
+    assert status_body.get("job_id") == job_id
+    assert status_body.get("plan_id") == plan_id
+    assert status_body.get("status") == "completed"
+    result = status_body.get("result") or {}
+    assert result.get("mode") == "dry-run"
+
+    restore_resp = requests.post(
+        f"{UPDATES_BASE}/v1/tools/updates.set_policy",
+        json={"arguments": {"policy_patch": {"auto_apply": original_auto_apply}}},
+        timeout=5,
+    )
+    assert restore_resp.status_code == 200, restore_resp.text
