@@ -309,6 +309,11 @@ def test_updates_policy_and_plan_flow():
     assert (result.get("target_release") or {}).get("platform_version") == manifest.get("release_version")
     rollback_target = result.get("rollback_target") or {}
     assert isinstance(rollback_target.get("platform_version"), str) and rollback_target.get("platform_version")
+    execution_plan = result.get("execution_plan") or {}
+    assert execution_plan.get("executor") == "compose-dry-run"
+    assert execution_plan.get("target_version") == manifest.get("release_version")
+    assert isinstance(execution_plan.get("steps"), list) and execution_plan.get("steps")
+    assert any(step.get("service") == "updates" for step in execution_plan.get("steps") if isinstance(step, dict))
 
     rollback_resp = requests.post(
         f"{UPDATES_BASE}/v1/tools/updates.rollback",
