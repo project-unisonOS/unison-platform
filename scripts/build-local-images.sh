@@ -25,9 +25,9 @@ docker build \
     -t ghcr.io/project-unisonos/unison-common-wheel:latest \
     "${COMMON_REPO}"
 
-echo "[local-build] building auth, orchestrator, renderer, and agent-vdi from workspace source"
+echo "[local-build] building auth, orchestrator, renderer, agent-vdi, and updates from workspace source"
 docker compose \
     --env-file "${PLATFORM_REPO}/.env" \
     -f "${PLATFORM_REPO}/compose/compose.yaml" \
     -f "${PLATFORM_REPO}/compose/compose.local-source.yaml" \
-    build auth orchestrator experience-renderer agent-vdi
+    build auth orchestrator experience-renderer agent-vdi updates

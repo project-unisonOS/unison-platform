@@ -14,3 +14,7 @@ services:
   agent-vdi:
     build:
       context: ../../unison-agent-vdi
+
+  updates:
+    build:
+      context: ../../unison-updates
