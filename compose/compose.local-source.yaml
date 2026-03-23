@@ -10,3 +10,7 @@ services:
   experience-renderer:
     build:
       context: ../../unison-experience-renderer
+
+  agent-vdi:
+    build:
+      context: ../../unison-agent-vdi

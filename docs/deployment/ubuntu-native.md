@@ -109,7 +109,7 @@ make up-local
 That workflow:
 
 - builds `ghcr.io/project-unisonos/unison-common-wheel:latest` from local `unison-common`
-- builds local source images for `unison-auth`, `unison-orchestrator`, and `unison-experience-renderer`
+- builds local source images for `unison-auth`, `unison-orchestrator`, `unison-experience-renderer`, and `unison-agent-vdi`
 - starts the stack with `compose/compose.local-source.yaml`
 
 The `updates` service is not part of the default bring-up yet. It remains behind the optional `updates` compose profile until the `unison-updates` implementation exists locally and in GHCR.

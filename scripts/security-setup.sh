@@ -405,13 +405,13 @@ main() {
     log "4. Test backup script: /opt/unison/backups/backup.sh"
     log "5. Deploy services: docker compose -f docker-compose.prod.yml up -d"
     
-    # Display generated passwords (only show once)
+    # Do not print generated credentials to stdout; point operators at the secret files instead.
     if [[ -f "./secrets/db_password.txt" ]]; then
-        warn "Generated passwords (save these securely):"
-        echo "Database password: $(cat ./secrets/db_password.txt)"
-        echo "Redis password: $(cat ./secrets/redis_password.txt)"
-        echo "Admin password: $(cat ./secrets/admin_password.txt)"
-        warn "These passwords will not be shown again. Save them securely."
+        warn "Generated credentials were written to:"
+        echo "  ./secrets/db_password.txt"
+        echo "  ./secrets/redis_password.txt"
+        echo "  ./secrets/admin_password.txt"
+        warn "Move these into your secrets manager and remove the local copies when done."
     fi
 }
 

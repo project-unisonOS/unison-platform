@@ -23,6 +23,7 @@ ORCHESTRATOR_BASE = os.environ.get("ORCHESTRATOR_BASE_URL", "http://localhost:80
 RENDERER_BASE = os.environ.get("RENDERER_BASE_URL", "http://localhost:8092")
 AUTH_BASE = os.environ.get("AUTH_BASE_URL", "http://localhost:8083")
 CONTEXT_BASE = os.environ.get("CONTEXT_BASE_URL", "http://localhost:8081")
+AGENT_VDI_BASE = os.environ.get("AGENT_VDI_BASE_URL", "http://localhost:8093")
 MILESTONE1_USERNAME = os.environ.get("MILESTONE1_ACCEPTANCE_USERNAME")
 MILESTONE1_PASSWORD = os.environ.get("MILESTONE1_ACCEPTANCE_PASSWORD")
 MILESTONE1_PERSON_ID = os.environ.get("MILESTONE1_ACCEPTANCE_PERSON_ID", "local-person")
@@ -150,3 +151,23 @@ def test_briefing_refresh_returns_cards_and_emits():
             break
         time.sleep(0.5)
     assert any(item.get("origin_intent") == "dashboard.refresh" for item in last_items if isinstance(item, dict)), last_items
+
+
+def test_vdi_download_returns_artifact_ids():
+    _wait_http_ok(f"{AGENT_VDI_BASE}/readyz")
+
+    resp = requests.post(
+        f"{AGENT_VDI_BASE}/tasks/download",
+        json={
+            "person_id": MILESTONE1_PERSON_ID,
+            "session_id": "milestone1-vdi-acceptance",
+            "url": "http://experience-renderer:8082/readyz",
+            "filename": "renderer-readyz.txt",
+        },
+        timeout=15,
+    )
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body.get("status") == "ok"
+    file_ids = body.get("file_ids") or []
+    assert isinstance(file_ids, list) and file_ids, body
