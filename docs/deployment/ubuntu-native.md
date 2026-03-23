@@ -163,6 +163,7 @@ That script:
 - restarts the orchestrator through the current compose stack
 - waits for core endpoints to reconverge
 - reruns the golden-path validation after recovery
+- reruns briefing and VDI acceptance after recovery when `MILESTONE1_ACCEPTANCE_USERNAME` and `MILESTONE1_ACCEPTANCE_PASSWORD` are set
 
 ## Operations And Recovery
 
