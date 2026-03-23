@@ -314,6 +314,9 @@ def test_updates_policy_and_plan_flow():
     assert execution_plan.get("target_version") == manifest.get("release_version")
     assert isinstance(execution_plan.get("steps"), list) and execution_plan.get("steps")
     assert any(step.get("service") == "updates" for step in execution_plan.get("steps") if isinstance(step, dict))
+    artifacts = result.get("artifacts") or {}
+    assert str((artifacts.get("apply_override") or {}).get("basename", "")).endswith(".json")
+    assert str((artifacts.get("rollback_override") or {}).get("basename", "")).endswith(".json")
 
     rollback_resp = requests.post(
         f"{UPDATES_BASE}/v1/tools/updates.rollback",
@@ -328,6 +331,7 @@ def test_updates_policy_and_plan_flow():
     assert ((rollback_body.get("last_attempted_target") or {}).get("target_release") or {}).get("platform_version") == manifest.get("release_version")
     assert isinstance((rollback_body.get("target") or {}).get("platform_version"), str)
     assert (rollback_body.get("target") or {}).get("platform_version")
+    assert str(((rollback_body.get("artifacts") or {}).get("rollback_override") or {}).get("basename", "")).endswith(".json")
 
     restore_resp = requests.post(
         f"{UPDATES_BASE}/v1/tools/updates.set_policy",
