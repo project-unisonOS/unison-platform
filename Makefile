@@ -1,7 +1,7 @@
 # Unison Platform - Developer Experience Makefile
 # Provides one-command orchestration for the entire Unison stack
 
-.PHONY: help up up-local down logs test-int pin clean status observability dev prod build-local validate-golden
+.PHONY: help up up-local down logs test-int pin clean status observability dev prod build-local validate-golden validate-recovery
 .PHONY: image-wsl image-vm image-iso baremetal-iso linux-vm qa-smoke
 
 # Default environment
@@ -129,6 +129,11 @@ validate-golden: ## Validate the first-run golden path against the live stack
 	@echo "$(BLUE)Validating golden path...$(RESET)"
 	@./scripts/validate-golden-path.sh
 	@echo "$(GREEN)Golden path validated$(RESET)"
+
+validate-recovery: ## Validate restart/recovery convergence against the live stack
+	@echo "$(BLUE)Validating recovery path...$(RESET)"
+	@./scripts/validate-recovery-path.sh
+	@echo "$(GREEN)Recovery path validated$(RESET)"
 
 restart: ## Restart all services
 	@echo "$(BLUE)Restarting services...$(RESET)"

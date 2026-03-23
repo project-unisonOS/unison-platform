@@ -152,6 +152,18 @@ That script checks:
 - orchestrator startup convergence
 - renderer onboarding convergence
 
+For restart/recovery validation on the live stack, run:
+
+```bash
+make validate-recovery
+```
+
+That script:
+
+- restarts the orchestrator through the current compose stack
+- waits for core endpoints to reconverge
+- reruns the golden-path validation after recovery
+
 ## Operations And Recovery
 
 The native installer now installs a Milestone 1 `unisonctl` that operates on the compose-backed `unison-platform.service` stack.
