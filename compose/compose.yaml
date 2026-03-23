@@ -161,6 +161,7 @@ services:
       INTENT_GRAPH_URL: http://intent-graph:8080
       CONTEXT_GRAPH_URL: http://context-graph:8081
       UNISON_UPDATES_URL: http://updates:8089
+      UNISON_COMPANION_MAX_TOKENS: ${UNISON_COMPANION_MAX_TOKENS:-256}
     depends_on:
       context:
         condition: service_healthy
