@@ -311,6 +311,16 @@ cmd_clear_staged_update() {
   log_ok "cleared staged next-boot update override"
 }
 
+cmd_finalize_staged_update() {
+  require_root
+  if [[ ! -f "${STAGED_METADATA_FILE}" ]]; then
+    log_error "no staged update metadata at ${STAGED_METADATA_FILE}"
+    exit 1
+  fi
+  python3 "${PREFIX}/scripts/finalize-staged-update.py" --prefix "${PREFIX}"
+  log_ok "finalized staged update and recorded last-known-good state"
+}
+
 cmd_help() {
   cat <<EOF
 unisonctl - Milestone 1 operations for the installed Unison platform
@@ -327,6 +337,7 @@ Usage:
   unisonctl recover
   unisonctl stage-update /path/to/job-apply-override.json
   unisonctl show-staged-update
+  unisonctl finalize-staged-update
   unisonctl clear-staged-update
 
 Notes:
@@ -351,6 +362,7 @@ main() {
     recover) cmd_recover "$@" ;;
     stage-update) cmd_stage_update "$@" ;;
     show-staged-update) cmd_show_staged_update "$@" ;;
+    finalize-staged-update) cmd_finalize_staged_update "$@" ;;
     clear-staged-update) cmd_clear_staged_update "$@" ;;
     help|-h|--help) cmd_help ;;
     *)

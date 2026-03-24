@@ -51,6 +51,9 @@ copy_bundle() {
   if [ -f "./scripts/install-staged-update.py" ]; then
     cp ./scripts/install-staged-update.py "${PREFIX}/scripts/"
   fi
+  if [ -f "./scripts/finalize-staged-update.py" ]; then
+    cp ./scripts/finalize-staged-update.py "${PREFIX}/scripts/"
+  fi
 }
 
 install_control_cli() {

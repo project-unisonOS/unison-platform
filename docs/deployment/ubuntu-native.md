@@ -198,6 +198,19 @@ That path:
 - records metadata in `${PREFIX}/staged/compose.next-boot.metadata.json`
 - causes subsequent `unisonctl start`, `restart`, and the systemd unit to include the staged override on boot
 
+After a successful boot into the staged target, finalize it with:
+
+```bash
+sudo unisonctl finalize-staged-update
+```
+
+That path:
+
+- archives the staged override and metadata under `${PREFIX}/staged/archive/`
+- clears the active staged files unless retention is requested
+- records the staged job as applied in `unison-updates`
+- updates `last_known_good` to the newly booted target
+
 ## Operations And Recovery
 
 The native installer now installs a Milestone 1 `unisonctl` that operates on the compose-backed `unison-platform.service` stack.

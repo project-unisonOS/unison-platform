@@ -1,7 +1,7 @@
 # Unison Platform - Developer Experience Makefile
 # Provides one-command orchestration for the entire Unison stack
 
-.PHONY: help up up-local down logs test-int pin clean status observability dev prod build-local validate-golden validate-recovery validate-update-artifact stage-update-artifact
+.PHONY: help up up-local down logs test-int pin clean status observability dev prod build-local validate-golden validate-recovery validate-update-artifact stage-update-artifact finalize-staged-update
 .PHONY: image-wsl image-vm image-iso baremetal-iso linux-vm qa-smoke
 
 # Default environment
@@ -10,6 +10,7 @@ PROFILE ?= $(ENV)
 COMPOSE_FILES ?= -f compose/compose.yaml
 MANIFEST ?= releases/local-dev-manifest.json
 PREFIX ?= /opt/unison-platform
+UPDATES_BASE_URL ?= http://127.0.0.1:8094
 COMPOSE := docker compose --env-file .env $(COMPOSE_FILES) --profile $(PROFILE)
 
 # Colors for output
@@ -150,6 +151,9 @@ stage-update-artifact: ## Install a staged next-boot override from an emitted up
 		exit 1; \
 	fi
 	@python3 ./scripts/install-staged-update.py --artifact "$(ARTIFACT)" --prefix "$(PREFIX)"
+
+finalize-staged-update: ## Finalize a staged next-boot override and record it as last-known-good
+	@python3 ./scripts/finalize-staged-update.py --prefix "$(PREFIX)" --updates-base-url "$(UPDATES_BASE_URL)"
 
 restart: ## Restart all services
 	@echo "$(BLUE)Restarting services...$(RESET)"
