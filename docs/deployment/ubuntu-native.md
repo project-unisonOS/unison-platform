@@ -185,6 +185,19 @@ That script:
 - compares the artifact service targets against `releases/local-dev-manifest.json`
 - fails if the artifact and manifest disagree on the target set
 
+For next-boot staging from an emitted apply artifact, run:
+
+```bash
+sudo unisonctl stage-update /var/lib/unison/updates/artifacts/<job>-apply-override.json
+sudo unisonctl show-staged-update
+```
+
+That path:
+
+- converts the emitted updates artifact into `${PREFIX}/staged/compose.next-boot.override.yaml`
+- records metadata in `${PREFIX}/staged/compose.next-boot.metadata.json`
+- causes subsequent `unisonctl start`, `restart`, and the systemd unit to include the staged override on boot
+
 ## Operations And Recovery
 
 The native installer now installs a Milestone 1 `unisonctl` that operates on the compose-backed `unison-platform.service` stack.

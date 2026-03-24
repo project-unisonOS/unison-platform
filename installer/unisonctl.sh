@@ -6,6 +6,9 @@ COMPOSE_FILE=${COMPOSE_FILE:-${PREFIX}/docker-compose.yml}
 ENV_FILE=${ENV_FILE:-/etc/unison/platform.env}
 SYSTEMD_UNIT=${SYSTEMD_UNIT:-unison-platform.service}
 TAIL_LINES=${TAIL_LINES:-150}
+STAGED_DIR=${STAGED_DIR:-${PREFIX}/staged}
+STAGED_OVERRIDE_FILE=${STAGED_OVERRIDE_FILE:-${STAGED_DIR}/compose.next-boot.override.yaml}
+STAGED_METADATA_FILE=${STAGED_METADATA_FILE:-${STAGED_DIR}/compose.next-boot.metadata.json}
 
 readonly RED=$'\033[0;31m'
 readonly GREEN=$'\033[0;32m'
@@ -43,7 +46,11 @@ has_systemd() {
 }
 
 compose_cmd() {
-  docker compose -f "${COMPOSE_FILE}" "$@"
+  local files=(-f "${COMPOSE_FILE}")
+  if [[ -f "${STAGED_OVERRIDE_FILE}" ]]; then
+    files+=(-f "${STAGED_OVERRIDE_FILE}")
+  fi
+  docker compose "${files[@]}" "$@"
 }
 
 env_contains_unsafe_defaults() {
@@ -129,6 +136,12 @@ cmd_status() {
     fi
   else
     log_warn "environment: ${ENV_FILE} is missing"
+  fi
+
+  if [[ -f "${STAGED_OVERRIDE_FILE}" ]]; then
+    log_warn "staged update: pending next boot via ${STAGED_OVERRIDE_FILE}"
+  else
+    log_ok "staged update: none"
   fi
 
   echo
@@ -271,6 +284,33 @@ cmd_recover() {
   cmd_health || true
 }
 
+cmd_stage_update() {
+  require_root
+  local artifact="${1:-}"
+  if [[ -z "${artifact}" ]]; then
+    log_error "Usage: unisonctl stage-update /path/to/job-apply-override.json"
+    exit 1
+  fi
+  mkdir -p "${STAGED_DIR}"
+  python3 "${PREFIX}/scripts/install-staged-update.py" --artifact "${artifact}" --prefix "${PREFIX}"
+  log_ok "staged next-boot update override at ${STAGED_OVERRIDE_FILE}"
+}
+
+cmd_show_staged_update() {
+  if [[ ! -f "${STAGED_METADATA_FILE}" ]]; then
+    log_warn "no staged update metadata at ${STAGED_METADATA_FILE}"
+    exit 0
+  fi
+  cat "${STAGED_METADATA_FILE}"
+  echo
+}
+
+cmd_clear_staged_update() {
+  require_root
+  rm -f "${STAGED_OVERRIDE_FILE}" "${STAGED_METADATA_FILE}"
+  log_ok "cleared staged next-boot update override"
+}
+
 cmd_help() {
   cat <<EOF
 unisonctl - Milestone 1 operations for the installed Unison platform
@@ -285,6 +325,9 @@ Usage:
   unisonctl follow [service]
   unisonctl doctor
   unisonctl recover
+  unisonctl stage-update /path/to/job-apply-override.json
+  unisonctl show-staged-update
+  unisonctl clear-staged-update
 
 Notes:
   - This command manages the compose-backed ${SYSTEMD_UNIT} stack.
@@ -306,6 +349,9 @@ main() {
     follow) cmd_follow "$@" ;;
     doctor) cmd_doctor "$@" ;;
     recover) cmd_recover "$@" ;;
+    stage-update) cmd_stage_update "$@" ;;
+    show-staged-update) cmd_show_staged_update "$@" ;;
+    clear-staged-update) cmd_clear_staged_update "$@" ;;
     help|-h|--help) cmd_help ;;
     *)
       log_error "Unknown command: ${cmd}"

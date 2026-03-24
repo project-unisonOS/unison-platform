@@ -7,6 +7,7 @@ SYSTEMD_UNIT=${SYSTEMD_UNIT:-/etc/systemd/system/unison-platform.service}
 COMPOSE_FILE=${COMPOSE_FILE:-docker-compose.prod.yml}
 UNISON_AUTO_START=${UNISON_AUTO_START:-0}
 UNISON_SKIP_START=${UNISON_SKIP_START:-0}
+STAGED_OVERRIDE_FILE=${STAGED_OVERRIDE_FILE:-${PREFIX}/staged/compose.next-boot.override.yaml}
 
 readonly UNSAFE_ENV_MARKERS=(
   "UNISON_ENV=development"
@@ -46,6 +47,9 @@ copy_bundle() {
   mkdir -p "${PREFIX}/scripts"
   if [ -f "./scripts/health-check.sh" ]; then
     cp ./scripts/health-check.sh "${PREFIX}/scripts/"
+  fi
+  if [ -f "./scripts/install-staged-update.py" ]; then
+    cp ./scripts/install-staged-update.py "${PREFIX}/scripts/"
   fi
 }
 
@@ -111,8 +115,8 @@ Type=oneshot
 RemainAfterExit=yes
 WorkingDirectory=${PREFIX}
 EnvironmentFile=${ENV_FILE}
-ExecStart=/usr/bin/docker compose -f ${PREFIX}/docker-compose.yml up -d --remove-orphans
-ExecStop=/usr/bin/docker compose -f ${PREFIX}/docker-compose.yml down
+ExecStart=/bin/sh -lc 'files="-f ${PREFIX}/docker-compose.yml"; if [ -f "${STAGED_OVERRIDE_FILE}" ]; then files="$$files -f ${STAGED_OVERRIDE_FILE}"; fi; exec /usr/bin/docker compose $$files up -d --remove-orphans'
+ExecStop=/bin/sh -lc 'files="-f ${PREFIX}/docker-compose.yml"; if [ -f "${STAGED_OVERRIDE_FILE}" ]; then files="$$files -f ${STAGED_OVERRIDE_FILE}"; fi; exec /usr/bin/docker compose $$files down'
 TimeoutStartSec=300
 TimeoutStopSec=120
 
