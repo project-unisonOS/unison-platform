@@ -1,7 +1,7 @@
 # Unison Platform - Developer Experience Makefile
 # Provides one-command orchestration for the entire Unison stack
 
-.PHONY: help up up-local down logs test-int pin clean status observability dev prod build-local validate-golden validate-recovery validate-update-artifact stage-update-artifact finalize-staged-update
+.PHONY: help up up-local down logs test-int pin clean status observability dev prod build-local validate-golden validate-recovery validate-update-artifact validate-staged-update-lifecycle stage-update-artifact finalize-staged-update
 .PHONY: image-wsl image-vm image-iso baremetal-iso linux-vm qa-smoke
 
 # Default environment
@@ -154,6 +154,9 @@ stage-update-artifact: ## Install a staged next-boot override from an emitted up
 
 finalize-staged-update: ## Finalize a staged next-boot override and record it as last-known-good
 	@python3 ./scripts/finalize-staged-update.py --prefix "$(PREFIX)" --updates-base-url "$(UPDATES_BASE_URL)"
+
+validate-staged-update-lifecycle: ## Validate stage -> finalize -> applied-state semantics against the live updates stack
+	@./scripts/validate-staged-update-lifecycle.sh
 
 restart: ## Restart all services
 	@echo "$(BLUE)Restarting services...$(RESET)"

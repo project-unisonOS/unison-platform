@@ -211,6 +211,19 @@ That path:
 - records the staged job as applied in `unison-updates`
 - updates `last_known_good` to the newly booted target
 
+For an end-to-end staged-update lifecycle check on the live stack, run:
+
+```bash
+make validate-staged-update-lifecycle
+```
+
+That validator:
+
+- creates a fresh updates apply job
+- stages its emitted artifact into a temporary prefix
+- finalizes the staged boot
+- verifies archive creation, cleared staged files, applied job state, and updated `last_known_good`
+
 ## Operations And Recovery
 
 The native installer now installs a Milestone 1 `unisonctl` that operates on the compose-backed `unison-platform.service` stack.
