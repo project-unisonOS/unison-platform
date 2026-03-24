@@ -173,6 +173,18 @@ That script:
 - reruns the golden-path validation after recovery
 - reruns briefing and VDI acceptance after recovery when `MILESTONE1_ACCEPTANCE_USERNAME` and `MILESTONE1_ACCEPTANCE_PASSWORD` are set
 
+For staged updates artifact validation on the live stack, run:
+
+```bash
+make validate-update-artifact ARTIFACT=/var/lib/unison/updates/artifacts/<job>-apply-override.json
+```
+
+That script:
+
+- reads the staged override artifact emitted by `unison-updates`
+- compares the artifact service targets against `releases/local-dev-manifest.json`
+- fails if the artifact and manifest disagree on the target set
+
 ## Operations And Recovery
 
 The native installer now installs a Milestone 1 `unisonctl` that operates on the compose-backed `unison-platform.service` stack.

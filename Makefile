@@ -1,13 +1,14 @@
 # Unison Platform - Developer Experience Makefile
 # Provides one-command orchestration for the entire Unison stack
 
-.PHONY: help up up-local down logs test-int pin clean status observability dev prod build-local validate-golden validate-recovery
+.PHONY: help up up-local down logs test-int pin clean status observability dev prod build-local validate-golden validate-recovery validate-update-artifact
 .PHONY: image-wsl image-vm image-iso baremetal-iso linux-vm qa-smoke
 
 # Default environment
 ENV ?= dev
 PROFILE ?= $(ENV)
 COMPOSE_FILES ?= -f compose/compose.yaml
+MANIFEST ?= releases/local-dev-manifest.json
 COMPOSE := docker compose --env-file .env $(COMPOSE_FILES) --profile $(PROFILE)
 
 # Colors for output
@@ -134,6 +135,13 @@ validate-recovery: ## Validate restart/recovery convergence against the live sta
 	@echo "$(BLUE)Validating recovery path...$(RESET)"
 	@./scripts/validate-recovery-path.sh
 	@echo "$(GREEN)Recovery path validated$(RESET)"
+
+validate-update-artifact: ## Validate a staged updates artifact against the current release manifest
+	@if [ -z "$(ARTIFACT)" ]; then \
+		echo "$(RED)Please specify an artifact: make validate-update-artifact ARTIFACT=/path/to/job-apply-override.json$(RESET)"; \
+		exit 1; \
+	fi
+	@./scripts/validate-update-artifact.py --artifact "$(ARTIFACT)" --manifest "$(MANIFEST)"
 
 restart: ## Restart all services
 	@echo "$(BLUE)Restarting services...$(RESET)"
