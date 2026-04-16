@@ -14,7 +14,7 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 - `make linux-vm` — writes VM QCOW2 (and optional VMDK).
 - `make baremetal-iso` — writes the remastered installer ISO with embedded autoinstall payload.
 - `make qa-smoke` — runs platform health + inference smoke tests (used in CI).
-- `release.yml` workflow — on `v*` tags, installs tooling, builds images/seed ISO, uploads artifacts, and attaches them to GitHub Releases.
+- `release.yml` workflow — on `v*` tags, installs tooling, builds release artifacts, uploads them, and attaches them to GitHub Releases. For alpha tags, the workflow is native-first and may also attach evaluator artifacts.
 
 ## Installers (`installer/`)
 - `install-docker.sh` — assumes Docker/Compose present; seeds `/etc/unison/platform.env`, installs `unison-platform.service`, and pulls images.
@@ -27,7 +27,9 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
   - Nightly: `:edge-main-YYYYMMDD` (from `main`).
   - Beta: `:vX.Y.0-beta.N` (from `release/x.y`).
   - Stable: `:vX.Y.Z` and `:latest` for platform.
-- Platform artifacts (WSL/VM/ISO + installers) will be attached to GitHub Releases in `unison-platform` for tagged versions.
+- Platform artifacts for the supported native install path are attached to GitHub Releases in `unison-platform` for tagged versions.
+- For alpha releases, this includes explicit native-install-first assets such as the native installer, `unisonctl`, native env template, native compose bundle, and native install docs.
+- Evaluator artifacts (WSL/VM/ISO) may also be attached when produced for that release.
 - Model manifest (`images/models.yaml`) drives model preload selection; include rendered `models.json` with published artifacts.
 - Service repos can call the shared workflow `project-unisonOS/unison-platform/.github/workflows/reusable-build.yml@main` to inherit the same tag semantics and GHCR labels.
 
@@ -36,4 +38,4 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 - First start is intentionally blocked when `/etc/unison/platform.env` still contains template or development defaults.
 - For ISO: bake `images/out/unisonos-iso-<version>/autoinstall/*` into an Ubuntu Server ISO using `xorriso`/`mkisofs`; late-commands install platform and enable `unison-platform.service`.
 - For VM images: the CI build path uses Ubuntu cloud images + libguestfs customization (no KVM required); the image provisions the platform on first boot via a systemd unit.
-- For WSL: distribute `unisonos-wsl-<version>.tar.gz`; extract, set env, run `docker compose -f bundle/docker-compose.prod.yml up -d`.
+- For WSL: distribute `unisonos-wsl-<version>.tar.gz`; extract, set env, run the bundled evaluator compose flow described by the release docs for that artifact.

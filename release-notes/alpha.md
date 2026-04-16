@@ -7,6 +7,7 @@ Built: {{BUILT_AT}}
 - Milestone 1 native install route remains the primary supported path for UnisonOS on Ubuntu 24.04 x86_64.
 - Alpha evaluator artifacts may also be included for WSL2, Linux VM, and bare-metal installer testing.
 - Bare-metal installer is full Ubuntu Server live-server media with embedded autoinstall payload (not a seed-only ISO).
+- Includes native-install-first release assets such as `install-native.sh`, `unisonctl.sh`, `platform.env.native.template`, `compose.native.yaml`, and native install docs.
 - Includes `unisonos-manifest-{{VERSION}}.json` and `SHA256SUMS-{{VERSION}}.txt` for verification.
 
 ## MVP checklist (alpha)
@@ -23,26 +24,24 @@ Built: {{BUILT_AT}}
 
 ## Downloads
 
-GitHub Release assets:
+GitHub Release assets (native-first contract plus any evaluator artifacts):
 
 {{ASSETS_BULLETS}}
 
-Bare-metal note:
-- GitHub Releases limit individual assets to 2GB, so the bare-metal ISO is shipped as `unisonos-baremetal-{{VERSION}}.iso.part00`, `...part01`, etc.
-- Reassemble before flashing:
-  - `cat unisonos-baremetal-{{VERSION}}.iso.part* > unisonos-baremetal-{{VERSION}}.iso`
+{{BARE_METAL_NOTE}}
 
 Canonical native install guide:
-- https://github.com/project-unisonOS/unison-platform/blob/main/docs/deployment/ubuntu-native.md
+- https://project-unisonos.github.io/developers/install-unisonos/
 
-Alpha evaluation guide:
-- https://project-unisonos.github.io/developers/evaluate-alpha/
+Alpha evaluation guides:
+- https://project-unisonos.github.io/developers/install-wsl2/
+- https://project-unisonos.github.io/developers/install-linux-vm/
+- https://project-unisonos.github.io/developers/install-bare-metal/
 
 ## Model packs
 
 - Default profile: `alpha/default` (Qwen for interaction + planner)
-- If models are missing, follow the prompt or see:
-  - https://project-unisonos.github.io/developers/model-packs/
+- If models are missing, follow the prompt or see the current model-pack guidance in the platform and docs repos.
 
 ## Known issues
 

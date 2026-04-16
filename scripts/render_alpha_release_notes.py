@@ -25,6 +25,16 @@ def main() -> int:
     assets = sorted([p.name for p in assets_dir.iterdir() if p.is_file()])
     assets_bullets = "\n".join([f"- `{name}`" for name in assets])
 
+    has_bare_metal_parts = any(name.startswith(f"unisonos-baremetal-{args.version}.iso.part") for name in assets)
+    bare_metal_note = ""
+    if has_bare_metal_parts:
+        bare_metal_note = (
+            "Bare-metal note:\n"
+            f"- GitHub Releases limit individual assets to 2GB, so the bare-metal ISO is shipped as `unisonos-baremetal-{args.version}.iso.part00`, `...part01`, etc.\n"
+            "- Reassemble before flashing:\n"
+            f"  - `cat unisonos-baremetal-{args.version}.iso.part* > unisonos-baremetal-{args.version}.iso`\n"
+        )
+
     built_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
 
     template = Path(args.template).read_text(encoding="utf-8")
@@ -34,6 +44,7 @@ def main() -> int:
             "VERSION": args.version,
             "BUILT_AT": built_at,
             "ASSETS_BULLETS": assets_bullets or "- (no assets found)",
+            "BARE_METAL_NOTE": bare_metal_note.rstrip(),
             # Placeholders to be filled by release engineer during draft finalization.
             "WHATS_NEW_1": "TBD",
             "WHATS_NEW_2": "TBD",

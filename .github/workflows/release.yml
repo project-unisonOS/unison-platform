@@ -32,7 +32,7 @@ jobs:
         run: |
           set -euo pipefail
           TAG="${{ inputs.tag || github.ref_name }}"
-          # Alpha tags are a single bundle release (WSL2 + VM + bare metal).
+          # Alpha tags publish a native-first release. Evaluator artifacts may also be attached.
           if [[ "${TAG}" == *"-alpha."* ]]; then
             echo "target=alpha-bundle" >> "$GITHUB_OUTPUT"
             echo "docs_root=https://project-unisonos.github.io" >> "$GITHUB_OUTPUT"

@@ -19,6 +19,15 @@ echo "[release-alpha] building artifacts VERSION=${VERSION}"
 
 echo "[release-alpha] staging canonical asset names"
 
+echo "[release-alpha] staging native-first install assets"
+cp "${ROOT_DIR}/installer/install-native.sh" "${DIST}/install-native.sh"
+cp "${ROOT_DIR}/installer/unisonctl.sh" "${DIST}/unisonctl.sh"
+cp "${ROOT_DIR}/.env.native.template" "${DIST}/platform.env.native.template"
+cp "${ROOT_DIR}/compose/compose.native.yaml" "${DIST}/compose.native.yaml"
+cp "${ROOT_DIR}/docs/install.md" "${DIST}/INSTALL.md"
+cp "${ROOT_DIR}/docs/deployment/ubuntu-native.md" "${DIST}/INSTALL-UBUNTU-NATIVE.md"
+cp "${ROOT_DIR}/docs/deployment/milestone-1-native-runtime-profile.md" "${DIST}/MILESTONE1-NATIVE-RUNTIME-PROFILE.md"
+
 WSL_SRC="${OUT}/unisonos-wsl2-dev-${VERSION}.tar.gz"
 WSL_DST="${DIST}/unisonos-wsl2-${VERSION}.tar.gz"
 test -f "${WSL_SRC}"
