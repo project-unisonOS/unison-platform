@@ -4,7 +4,8 @@ set -euo pipefail
 PREFIX=${PREFIX:-/opt/unison-platform}
 ENV_FILE=${ENV_FILE:-/etc/unison/platform.env}
 SYSTEMD_UNIT=${SYSTEMD_UNIT:-/etc/systemd/system/unison-platform.service}
-COMPOSE_FILE=${COMPOSE_FILE:-docker-compose.prod.yml}
+COMPOSE_FILE=${COMPOSE_FILE:-compose/compose.native.yaml}
+ENV_TEMPLATE=${ENV_TEMPLATE:-.env.native.template}
 UNISON_AUTO_START=${UNISON_AUTO_START:-0}
 UNISON_SKIP_START=${UNISON_SKIP_START:-0}
 STAGED_OVERRIDE_FILE=${STAGED_OVERRIDE_FILE:-${PREFIX}/staged/compose.next-boot.override.yaml}
@@ -65,9 +66,9 @@ install_control_cli() {
 seed_env() {
   mkdir -p "$(dirname "${ENV_FILE}")"
   if [ ! -f "${ENV_FILE}" ]; then
-    cp .env.template "${ENV_FILE}"
+    cp "${ENV_TEMPLATE}" "${ENV_FILE}"
     chmod 600 "${ENV_FILE}"
-    echo "Seeded ${ENV_FILE} from .env.template. Update secrets before starting." >&2
+    echo "Seeded ${ENV_FILE} from ${ENV_TEMPLATE}. Update secrets before starting." >&2
   fi
 }
 

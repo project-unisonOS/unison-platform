@@ -11,18 +11,26 @@ Supported target:
 
 This guide intentionally does not describe evaluator images, default passwords, or developer-only bootstrap flows.
 
+For the concrete supported runtime/install contract behind this guide, see:
+
+- `docs/deployment/milestone-1-native-runtime-profile.md`
+
 ## What The Native Installer Does
 
 `installer/install-native.sh`:
 
 - installs Docker if missing
-- copies the platform bundle into `/opt/unison-platform`
-- seeds `/etc/unison/platform.env` from `.env.template` if the file does not already exist
+- copies the Milestone 1 native compose bundle into `/opt/unison-platform`
+- seeds `/etc/unison/platform.env` from `.env.native.template` if the file does not already exist
 - installs and enables `unison-platform.service`
-- pulls container images
+- pulls container images for the native runtime profile
 - stops before first start unless the environment is explicitly production-safe and auto-start is requested
 
 That last point is deliberate. The installer will not boot the stack with template or development defaults.
+
+The native installer now uses `compose/compose.native.yaml` as the supported runtime bundle for Milestone 1.
+
+By default, that native bundle includes the core platform services, leaves `agent-vdi` disabled unless the `vdi` profile is enabled, leaves the vision/multimodal I/O lane disabled unless `vision` or `multimodal` is enabled, and keeps `updates` plus observability disabled unless their compose profiles are explicitly enabled.
 
 ## Install
 
@@ -47,7 +55,7 @@ Open the generated environment file:
 sudo editor /etc/unison/platform.env
 ```
 
-At minimum, replace these template defaults:
+At minimum, replace these template defaults from the native-install template:
 
 - `UNISON_ENV=development`
 - `POSTGRES_PASSWORD=unison_password`

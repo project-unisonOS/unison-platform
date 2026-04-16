@@ -16,9 +16,15 @@ Scripts:
 - `install-wsl.sh` — WSL-friendly path for evaluation environments; installs Docker if needed, copies bundle/env, and prepares the stack.
 - `common.sh` — shared helpers for prereq checks, env seeding, systemd unit creation, image pulls, safety validation, and optional startup.
 
+Runtime bundle defaults:
+- native installs now default to `compose/compose.native.yaml`
+- developer/runtime iteration still uses `compose/compose.yaml` and `compose/compose.local-source.yaml`
+- optional `updates` remains behind its compose profile
+
 Safety behavior:
 
 - Installers no longer start the stack if `/etc/unison/platform.env` still contains template or development defaults.
+- Native installs seed `/etc/unison/platform.env` from `.env.native.template` by default so the supported Milestone 1 route starts from a narrower runtime contract than the broader developer `.env.template`.
 - Auto-start is opt-in via `UNISON_AUTO_START=1`.
 - `UNISON_SKIP_START=1` always suppresses first start.
 - Installers now install `/usr/local/bin/unisonctl` as the supported Milestone 1 operations CLI for the compose-backed native stack.

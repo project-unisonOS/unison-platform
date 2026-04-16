@@ -305,6 +305,8 @@ services:
 
   agent-vdi:
     image: ghcr.io/project-unisonos/unison-agent-vdi:${UNISON_IMAGE_TAG:-latest}
+    profiles:
+      - vdi
     restart: unless-stopped
     ports:
       - "${AGENT_VDI_HOST_PORT:-8093}:8083"
@@ -365,6 +367,9 @@ services:
 
   io-vision:
     image: ghcr.io/project-unisonos/unison-io-vision:${UNISON_IMAGE_TAG:-latest}
+    profiles:
+      - vision
+      - multimodal
     restart: unless-stopped
     ports:
       - "${IO_VISION_HOST_PORT:-8086}:8086"
@@ -390,6 +395,9 @@ services:
 
   io-core:
     image: ghcr.io/project-unisonos/unison-io-core:${UNISON_IMAGE_TAG:-latest}
+    profiles:
+      - vision
+      - multimodal
     restart: unless-stopped
     ports:
       - "${IO_CORE_HOST_PORT:-8085}:8085"
