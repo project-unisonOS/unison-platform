@@ -124,7 +124,7 @@ jobs:
           if [ -f "release-assets/unisonos-baremetal-${VERSION}.iso.part00" ]; then
             test -f "release-assets/unisonos-baremetal-${VERSION}.iso.part01"
             test -f "release-assets/unisonos-baremetal-${VERSION}.iso.REASSEMBLE.txt"
-            for p in release-assets/unisonos-baremetal-${VERSION}.iso.part*; do
+            for p in "release-assets/unisonos-baremetal-${VERSION}.iso".part*; do
               bytes="$(stat -c%s "${p}")"
               test "${bytes}" -lt 2147483648
             done
