@@ -69,8 +69,12 @@ services:
       SERVICE_PORT: 8088
       POSTGRES_HOST: postgres
       REDIS_HOST: redis
+      UNISON_AUTH_KEYS_DIR: /keys/rsa
+      UNISON_AUTH_IDENTITY_DATABASE_PATH: /keys/identity.db
+      UNISON_AUTH_BOOTSTRAP_TOKEN_FILE: /run/secrets/unison_bootstrap_token
     volumes:
       - auth_keys:/keys
+    secrets: [unison_bootstrap_token]
     depends_on:
       postgres:
         condition: service_healthy
@@ -78,6 +82,29 @@ services:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8088/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  consent:
+    image: ghcr.io/project-unisonos/unison-consent:${UNISON_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${CONSENT_HOST_PORT:-7072}:7072"
+    environment:
+      SERVICE_NAME: unison-consent
+      UNISON_CONSENT_PORT: 7072
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      UNISON_CONSENT_KEYS_DIR: /keys
+    volumes:
+      - consent_keys:/keys
+    depends_on:
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:7072/readyz"]
       interval: 30s
       timeout: 10s
       retries: 3
@@ -96,15 +123,21 @@ services:
       SERVICE_PORT: 8081
       POSTGRES_HOST: postgres
       REDIS_HOST: redis
-      AUTH_URL: http://auth:8088
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      UNISON_CONTEXT_PROFILE_KEY_FILE: /run/secrets/unison_context_root
+      UNISON_REQUIRE_CONSENT: "true"
+      UNISON_CONSENT_SERVICE_URL: http://consent:7072
     volumes:
       - context_data:/data
+    secrets: [unison_context_root]
     depends_on:
       postgres:
         condition: service_healthy
       redis:
         condition: service_healthy
       auth:
+        condition: service_healthy
+      consent:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8081/health"]
@@ -126,7 +159,7 @@ services:
       SERVICE_PORT: 8083
       POSTGRES_HOST: postgres
       REDIS_HOST: redis
-      AUTH_URL: http://auth:8088
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
     depends_on:
       postgres:
         condition: service_healthy
@@ -154,8 +187,7 @@ services:
       SERVICE_PORT: 8080
       CONTEXT_URL: http://context:8081
       POLICY_URL: http://policy:8083
-      AUTH_URL: http://auth:8088
-      UNISON_AUTH_URL: http://auth:8088
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
       UNISON_RENDERER_URL: http://experience-renderer:8082
       REDIS_HOST: redis
       NATS_HOST: nats
@@ -285,6 +317,8 @@ services:
       ORCHESTRATOR_BASE_URL: http://orchestrator:8080
       SPEECH_BASE_URL: http://io-speech:8084
       INFERENCE_BASE_URL: http://inference:8087
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      AUTH_BASE_URL: http://auth:8088
       REDIS_HOST: redis
     depends_on:
       intent-graph:
@@ -351,7 +385,7 @@ services:
       SERVICE_NAME: unison-io-speech
       SERVICE_PORT: 8084
       NATS_HOST: nats
-      AUTH_URL: http://auth:8088
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
     depends_on:
       nats:
         condition: service_healthy
@@ -379,7 +413,7 @@ services:
       SERVICE_NAME: unison-io-vision
       SERVICE_PORT: 8086
       NATS_HOST: nats
-      AUTH_URL: http://auth:8088
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
     depends_on:
       nats:
         condition: service_healthy
@@ -407,7 +441,7 @@ services:
       SERVICE_NAME: unison-io-core
       SERVICE_PORT: 8085
       NATS_HOST: nats
-      AUTH_URL: http://auth:8088
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
       SPEECH_URL: http://io-speech:8084
       VISION_URL: http://io-vision:8086
     depends_on:
@@ -439,7 +473,7 @@ services:
       SERVICE_NAME: unison-inference
       SERVICE_PORT: 8087
       NATS_HOST: nats
-      AUTH_URL: http://auth:8088
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
       UNISON_INFERENCE_PROVIDER: "ollama"
       UNISON_INFERENCE_MODEL: "${UNISON_INFERENCE_MODEL:-qwen2.5:1.5b}"
       UNISON_INFERENCE_MODEL_TEXT: "${UNISON_INFERENCE_MODEL_TEXT:-${UNISON_INFERENCE_MODEL:-qwen2.5:1.5b}}"
@@ -472,9 +506,11 @@ services:
       SERVICE_NAME: unison-storage
       SERVICE_PORT: 8082
       POSTGRES_HOST: postgres
-      AUTH_URL: http://auth:8088
+      UNISON_AUTH_SERVICE_URL: http://auth:8088
+      STORAGE_OBJECT_ENC_KEY_FILE: /run/secrets/unison_storage_root
     volumes:
       - storage_data:/data
+    secrets: [unison_storage_root]
     depends_on:
       postgres:
         condition: service_healthy
@@ -545,6 +581,8 @@ volumes:
     driver: local
   auth_keys:
     driver: local
+  consent_keys:
+    driver: local
   context_data:
     driver: local
   storage_data:
@@ -555,6 +593,14 @@ volumes:
     driver: local
   updates_data:
     driver: local
+
+secrets:
+  unison_bootstrap_token:
+    file: ${UNISON_KEYS_DIR:-../data/keys}/bootstrap-token
+  unison_context_root:
+    file: ${UNISON_KEYS_DIR:-../data/keys}/context-root
+  unison_storage_root:
+    file: ${UNISON_KEYS_DIR:-../data/keys}/storage-root
 
 networks:
   unison-network:

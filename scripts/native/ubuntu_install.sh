@@ -395,13 +395,25 @@ JAEGER_HOST=localhost
 JAEGER_PORT=16686
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
 
-# Security (CHANGE THESE IN PRODUCTION!)
-UNISON_JWT_SECRET=$(openssl rand -hex 32)
-UNISON_CONSENT_SECRET=$(openssl rand -hex 32)
+# Phase 1 secret files live under UNISON_KEYS_DIR and are mounted only into
+# their owning trust/data service. No reusable broad JWT/service secret is emitted.
 
 # Audio
 PULSE_SERVER=unix:/run/pulse/native
 EOF
+
+    install -d -m 700 -o "$UNISON_USER" -g "$UNISON_USER" "$DATA_DIR/keys"
+    openssl rand -hex 32 > "$DATA_DIR/keys/bootstrap-token"
+    openssl rand -base64 32 > "$DATA_DIR/keys/context-root"
+    openssl rand -base64 32 > "$DATA_DIR/keys/storage-root"
+    chown "$UNISON_USER:$UNISON_USER" \
+        "$DATA_DIR/keys/bootstrap-token" \
+        "$DATA_DIR/keys/context-root" \
+        "$DATA_DIR/keys/storage-root"
+    chmod 600 \
+        "$DATA_DIR/keys/bootstrap-token" \
+        "$DATA_DIR/keys/context-root" \
+        "$DATA_DIR/keys/storage-root"
     
     chown "$UNISON_USER:$UNISON_USER" "$INSTALL_DIR/.env"
     chmod 600 "$INSTALL_DIR/.env"
