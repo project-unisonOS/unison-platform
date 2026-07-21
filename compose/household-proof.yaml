@@ -1,0 +1,23 @@
+services:
+  auth:
+    environment:
+      UNISON_HOUSEHOLD_PROOF: "true"
+      UNISON_HOUSEHOLD_ADULT_LIMIT: "2"
+  context:
+    environment:
+      UNISON_HOUSEHOLD_PROOF: "true"
+      UNISON_CONTEXT_REQUIRE_EXPLICIT_HOUSEHOLD: "true"
+  orchestrator:
+    environment:
+      UNISON_HOUSEHOLD_ASSISTANT_COUNT: "2"
+      UNISON_HOUSEHOLD_TOTAL_CONCURRENT: "2"
+      UNISON_ASSISTANT_MAX_CONCURRENT: "1"
+      UNISON_ASSISTANT_MAX_QUEUED: "16"
+      UNISON_ASSISTANT_CPU_UNITS: "1"
+      UNISON_ASSISTANT_MEMORY_MB: "512"
+  experience-renderer:
+    environment:
+      UNISON_HOUSEHOLD_ASSISTANT_COUNT: "2"
+      UNISON_ASSISTANT_MAX_CONCURRENT: "1"
+      UNISON_ASSISTANT_MAX_QUEUED: "16"
+
