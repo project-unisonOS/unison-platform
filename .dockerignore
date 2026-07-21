@@ -1,0 +1,15 @@
+images/
+qa/
+tests/
+*.iso
+*.img
+*.qcow2
+*.vmdk
+*.tar.gz
+*.log
+node_modules/
+.git
+.github
+.venv
+__pycache__/
+*.pyc

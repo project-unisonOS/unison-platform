@@ -1,0 +1,24 @@
+{
+  "schema_version": "unison.platform.modelpack.profile.v1",
+  "profile": "alpha/full",
+  "description": "Alpha full: larger footprint (adds larger interaction models where supported).",
+  "defaults": {
+    "inference_provider": "ollama",
+    "interaction_model": "qwen2.5",
+    "planner_provider": "ollama",
+    "planner_model": "qwen2.5:7b"
+  },
+  "required_model_packs": [
+    "unison.phase1.1.speech@0.1.1"
+  ],
+  "ollama_models": [
+    "qwen2.5",
+    "qwen2.5:7b"
+  ],
+  "requirements": {
+    "disk_gb_min": 60,
+    "ram_gb_min": 16,
+    "notes": "May be too large for ISO bundling; recommended for VM/bare-metal with ample disk."
+  }
+}
+

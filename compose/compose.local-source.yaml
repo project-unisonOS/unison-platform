@@ -1,0 +1,24 @@
+services:
+  auth:
+    build:
+      context: ../../unison-auth
+
+  orchestrator:
+    build:
+      context: ../../unison-orchestrator
+
+  experience-renderer:
+    build:
+      context: ../../unison-experience-renderer
+
+  agent-vdi:
+    build:
+      context: ../../unison-agent-vdi
+
+  updates:
+    build:
+      context: ../../unison-updates
+    environment:
+      UNISON_UPDATES_MANIFEST_PATH: /opt/unison/releases/local-dev-manifest.json
+    volumes:
+      - ../releases:/opt/unison/releases:ro

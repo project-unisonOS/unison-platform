@@ -1,11 +1,17 @@
-﻿# Unison Platform - Developer Experience Makefile
+# Unison Platform - Developer Experience Makefile
 # Provides one-command orchestration for the entire Unison stack
 
-.PHONY: help up down logs test-int pin clean status observability dev prod
+.PHONY: help up up-local down logs test-int pin clean status observability dev prod build-local validate-golden validate-recovery validate-update-artifact validate-staged-update-lifecycle stage-update-artifact finalize-staged-update
+.PHONY: image-wsl image-vm image-iso baremetal-iso linux-vm qa-smoke
 
 # Default environment
 ENV ?= dev
 PROFILE ?= $(ENV)
+COMPOSE_FILES ?= -f compose/compose.yaml
+MANIFEST ?= releases/local-dev-manifest.json
+PREFIX ?= /opt/unison-platform
+UPDATES_BASE_URL ?= http://127.0.0.1:8094
+COMPOSE := docker compose --env-file .env $(COMPOSE_FILES) --profile $(PROFILE)
 
 # Colors for output
 BLUE := \033[36m
@@ -22,17 +28,17 @@ help: ## Show this help message
 up: ## Start the Unison stack
 	@echo "$(BLUE)Starting Unison platform ($(ENV))...$(RESET)"
 	@mkdir -p logs
-	@docker compose --profile $(PROFILE) up -d --wait
+	@$(COMPOSE) up -d --wait
 	@echo "$(GREEN)Stack is ready!$(RESET)"
 	@echo "$(YELLOW)Service Endpoints:$(RESET)"
 	@echo "   - Orchestrator:     http://localhost:8090/health"
 	@echo "   - Intent Graph:     http://localhost:8080/health"
 	@echo "   - Context Graph:    http://localhost:8091/health"
 	@echo "   - Experience Rendr: http://localhost:8092/health"
-	@echo "   - Agent VDI:        http://localhost:8093/health"
+	@echo "   - Agent VDI:        http://localhost:8093/readyz"
 	@echo "   - Auth Service:     http://localhost:8083/health"
 	@echo "   - Context Service:  http://localhost:8081/health"
-	@echo "   - Policy Service:   http://localhost:8083/health"
+	@echo "   - Policy Service:   http://localhost:8095/health"
 	@echo "   - I/O Speech:       http://localhost:8084/health"
 	@echo "   - I/O Vision:       http://localhost:8086/health"
 	@echo "   - I/O Core:         http://localhost:8085/health"
@@ -45,14 +51,22 @@ up: ## Start the Unison stack
 		echo "   - Grafana:          http://localhost:3000 (admin/admin)"; \
 	fi
 
+up-local: ## Build local source images and start the stack from workspace sources
+	@echo "$(BLUE)Building local-source runtime images...$(RESET)"
+	@./scripts/build-local-images.sh
+	@echo "$(BLUE)Starting Unison platform from local sources ($(ENV))...$(RESET)"
+	@mkdir -p logs
+	@docker compose --env-file .env -f compose/compose.yaml -f compose/compose.local-source.yaml --profile $(PROFILE) up -d --wait
+	@echo "$(GREEN)Local-source stack is ready$(RESET)"
+
 down: ## Stop the Unison stack
 	@echo "$(BLUE)Stopping Unison platform...$(RESET)"
-	@docker compose --profile $(PROFILE) down -v --remove-orphans
+	@$(COMPOSE) down -v --remove-orphans
 	@echo "$(GREEN)Stack stopped$(RESET)"
 
 logs: ## Show logs from all services
 	@echo "$(BLUE)Streaming logs from all services...$(RESET)"
-	@docker compose --profile $(PROFILE) logs -f --tail=200
+	@$(COMPOSE) logs -f --tail=200
 
 logs-service: ## Show logs for a specific service (usage: make logs-service SERVICE=orchestrator)
 	@if [ -z "$(SERVICE)" ]; then \
@@ -60,15 +74,15 @@ logs-service: ## Show logs for a specific service (usage: make logs-service SERV
 		exit 1; \
 	fi
 	@echo "$(BLUE)Streaming logs from $(SERVICE)...$(RESET)"
-	@docker compose --profile $(PROFILE) logs -f --tail=100 $(SERVICE)
+	@$(COMPOSE) logs -f --tail=100 $(SERVICE)
 
 status: ## Show status of all services
 	@echo "$(BLUE)Service Status:$(RESET)"
-	@docker compose --profile $(PROFILE) ps
+	@$(COMPOSE) ps
 
 test-int: ## Run integration tests
 	@echo "$(BLUE)Running integration tests...$(RESET)"
-	@docker compose --profile $(PROFILE) up -d --wait
+	@$(COMPOSE) up -d --wait
 	@sleep 10  # Wait for services to be fully ready
 	@python -m pytest tests/integration/ -v --tb=short --color=yes
 	@echo "$(GREEN)Integration tests completed$(RESET)"
@@ -90,7 +104,7 @@ validate: ## Validate service contracts and dependencies
 
 clean: ## Clean up Docker resources and caches
 	@echo "$(BLUE)Cleaning up Docker resources...$(RESET)"
-	@docker compose --profile $(PROFILE) down -v --remove-orphans
+	@$(COMPOSE) down -v --remove-orphans
 	@docker system prune -f
 	@docker volume prune -f
 	@docker network prune -f
@@ -114,9 +128,39 @@ health: ## Check health of all services
 	@./scripts/health-check.sh
 	@echo "$(GREEN)Health check completed$(RESET)"
 
+validate-golden: ## Validate the first-run golden path against the live stack
+	@echo "$(BLUE)Validating golden path...$(RESET)"
+	@./scripts/validate-golden-path.sh
+	@echo "$(GREEN)Golden path validated$(RESET)"
+
+validate-recovery: ## Validate restart/recovery convergence against the live stack
+	@echo "$(BLUE)Validating recovery path...$(RESET)"
+	@./scripts/validate-recovery-path.sh
+	@echo "$(GREEN)Recovery path validated$(RESET)"
+
+validate-update-artifact: ## Validate a staged updates artifact against the current release manifest
+	@if [ -z "$(ARTIFACT)" ]; then \
+		echo "$(RED)Please specify an artifact: make validate-update-artifact ARTIFACT=/path/to/job-apply-override.json$(RESET)"; \
+		exit 1; \
+	fi
+	@./scripts/validate-update-artifact.py --artifact "$(ARTIFACT)" --manifest "$(MANIFEST)"
+
+stage-update-artifact: ## Install a staged next-boot override from an emitted updates artifact
+	@if [ -z "$(ARTIFACT)" ]; then \
+		echo "$(RED)Please specify an artifact: make stage-update-artifact ARTIFACT=/path/to/job-apply-override.json$(RESET)"; \
+		exit 1; \
+	fi
+	@python3 ./scripts/install-staged-update.py --artifact "$(ARTIFACT)" --prefix "$(PREFIX)"
+
+finalize-staged-update: ## Finalize a staged next-boot override and record it as last-known-good
+	@python3 ./scripts/finalize-staged-update.py --prefix "$(PREFIX)" --updates-base-url "$(UPDATES_BASE_URL)"
+
+validate-staged-update-lifecycle: ## Validate stage -> finalize -> applied-state semantics against the live updates stack
+	@./scripts/validate-staged-update-lifecycle.sh
+
 restart: ## Restart all services
 	@echo "$(BLUE)Restarting services...$(RESET)"
-	@docker compose --profile $(PROFILE) restart
+	@$(COMPOSE) restart
 	@echo "$(GREEN)Services restarted$(RESET)"
 
 restart-service: ## Restart a specific service (usage: make restart-service SERVICE=orchestrator)
@@ -125,7 +169,7 @@ restart-service: ## Restart a specific service (usage: make restart-service SERV
 		exit 1; \
 	fi
 	@echo "$(BLUE)Restarting $(SERVICE)...$(RESET)"
-	@docker compose --profile $(PROFILE) restart $(SERVICE)
+	@$(COMPOSE) restart $(SERVICE)
 	@echo "$(GREEN)$(SERVICE) restarted$(RESET)"
 
 shell: ## Get shell in a service container (usage: make shell SERVICE=orchestrator)
@@ -134,7 +178,7 @@ shell: ## Get shell in a service container (usage: make shell SERVICE=orchestrat
 		exit 1; \
 	fi
 	@echo "$(BLUE)Opening shell in $(SERVICE)...$(RESET)"
-	@docker compose --profile $(PROFILE) exec $(SERVICE) /bin/bash
+	@$(COMPOSE) exec $(SERVICE) /bin/bash
 
 exec: ## Execute command in a service (usage: make exec SERVICE=orchestrator CMD="ls -la")
 	@if [ -z "$(SERVICE)" ] || [ -z "$(CMD)" ]; then \
@@ -142,16 +186,21 @@ exec: ## Execute command in a service (usage: make exec SERVICE=orchestrator CMD
 		exit 1; \
 	fi
 	@echo "$(BLUE)Executing in $(SERVICE): $(CMD)$(RESET)"
-	@docker compose --profile $(PROFILE) exec $(SERVICE) sh -c "$(CMD)"
+	@$(COMPOSE) exec $(SERVICE) sh -c "$(CMD)"
 
 build: ## Build all services
 	@echo "$(BLUE)Building all services...$(RESET)"
-	@docker compose --profile $(PROFILE) build --parallel
+	@$(COMPOSE) build --parallel
 	@echo "$(GREEN)Build completed$(RESET)"
+
+build-local: ## Build the local-source images used by up-local
+	@echo "$(BLUE)Building local-source images...$(RESET)"
+	@./scripts/build-local-images.sh
+	@echo "$(GREEN)Local-source images built$(RESET)"
 
 pull: ## Pull latest images
 	@echo "$(BLUE)Pulling latest images...$(RESET)"
-	@docker compose --profile $(PROFILE) pull
+	@$(COMPOSE) pull
 	@echo "$(GREEN)Images pulled$(RESET)"
 
 update: ## Update stack (pull + up)
@@ -173,7 +222,7 @@ restore: ## Restore from backup (usage: make restore BACKUP_DIR=20231103_120000)
 		exit 1; \
 	fi
 	@echo "$(BLUE)Restoring from backup $(BACKUP_DIR)...$(RESET)"
-	@docker compose --profile $(PROFILE) down -v
+	@$(COMPOSE) down -v
 	@docker run --rm -v unison-devstack_postgres_data:/data -v $$PWD/backups/$(BACKUP_DIR):/backup alpine tar xzf /backup/postgres_data.tar.gz -C /data
 	@docker run --rm -v unison-devstack_redis_data:/data -v $$PWD/backups/$(BACKUP_DIR):/backup alpine tar xzf /backup/redis_data.tar.gz -C /data
 	@make up
@@ -198,6 +247,42 @@ security-scan: ## Run security vulnerability scan
 	@echo "$(BLUE)Running security scan...$(RESET)"
 	@./scripts/security-scan.sh
 	@echo "$(GREEN)Security scan completed$(RESET)"
+
+# Image build scaffolding (Phase 2)
+image-wsl: ## Build WSL rootfs/script (scaffolding)
+	@echo "$(BLUE)Building WSL artifact (placeholder)...$(RESET)"
+	@bash images/wsl/build-wsl.sh
+
+image-vm: ## Build VM images (QCOW2/VMDK) (scaffolding)
+	@echo "$(BLUE)Building VM artifacts (placeholder)...$(RESET)"
+	@echo "$(YELLOW)Deprecated: use 'make linux-vm' for evaluator-ready images.$(RESET)"
+	@bash images/vm/scripts/build-vm-qcow2.sh
+
+image-iso: ## Build autoinstall ISO (scaffolding)
+	@echo "$(BLUE)Building ISO artifact (placeholder)...$(RESET)"
+	@bash images/iso/build-iso.sh
+
+baremetal-iso: ## Build full bare-metal installer ISO (autoinstall)
+	@echo "$(BLUE)Building bare-metal installer ISO...$(RESET)"
+	@bash images/baremetal/scripts/build-installer-iso.sh
+
+linux-vm: ## Build full Linux VM disk image (QCOW2, optional VMDK)
+	@echo "$(BLUE)Building Linux VM QCOW2...$(RESET)"
+	@bash images/vm/scripts/build-vm-qcow2.sh
+	@if [ "$${BUILD_VMDK:-}" = "1" ] || [ "$${BUILD_VMDK:-}" = "true" ]; then \
+		echo "$(BLUE)Building Linux VM VMDK...$(RESET)"; \
+		bash images/vm/scripts/build-vm-vmdk.sh; \
+	fi
+
+qa-smoke: ## Run platform smoke tests (scaffolding)
+	@echo "$(BLUE)Running platform smoke tests...$(RESET)"
+	@python -m pytest qa -v --tb=short
+	@echo "$(GREEN)QA smoke completed$(RESET)"
+
+qa-native-install: ## Run native install acceptance against a real installed stack
+	@echo "$(BLUE)Running native install acceptance...$(RESET)"
+	@RUN_NATIVE_INSTALL_ACCEPTANCE=1 python -m pytest qa/test_native_install_acceptance.py -v --tb=short
+	@echo "$(GREEN)Native install acceptance completed$(RESET)"
 
 docs: ## Generate documentation
 	@echo "$(BLUE)Generating documentation...$(RESET)"
@@ -227,7 +312,7 @@ metrics: ## Show system metrics
 	@docker stats --no-stream
 
 top: ## Show running processes
-	@docker compose --profile $(PROFILE) top
+	@$(COMPOSE) top
 # ============================================================================
 # Native Ubuntu Deployment (P1.1)
 # ============================================================================
@@ -283,4 +368,3 @@ native-disable: ## Disable services from starting on boot
 	@echo "$(BLUE)Disabling services on boot...$(RESET)"
 	@sudo unisonctl disable
 	@echo "$(GREEN)Services will not start on boot$(RESET)"
-

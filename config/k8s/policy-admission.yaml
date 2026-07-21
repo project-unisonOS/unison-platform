@@ -1,0 +1,45 @@
+# Example Kyverno policy to enforce cosign verification for images and policy bundles.
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: verify-unison-images
+spec:
+  validationFailureAction: enforce
+  background: false
+  rules:
+    - name: verify-cosign
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+      verifyImages:
+        - imageReferences:
+            - "ghcr.io/project-unisonos/*"
+          attestors:
+            - entries:
+                - keyless:
+                    issuer: https://token.actions.githubusercontent.com
+                    subject: "https://github.com/project-unisonOS/*"
+---
+# Admission webhook stub for OPA sidecar policy bundle verification.
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: unison-policy-admission
+webhooks:
+  - name: policy.unisonos.dev
+    clientConfig:
+      service:
+        name: opa-admission
+        namespace: security
+        path: /v1/admit
+      caBundle: "" # inject CA bundle
+    rules:
+      - operations: ["CREATE", "UPDATE"]
+        apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        resources: ["deployments", "statefulsets"]
+    admissionReviewVersions: ["v1"]
+    sideEffects: None
+    failurePolicy: Fail

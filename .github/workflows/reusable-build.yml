@@ -12,6 +12,14 @@ on:
         required: false
         type: string
         default: "8080"
+      dockerfile:
+        required: false
+        type: string
+        default: "Dockerfile"
+      context:
+        required: false
+        type: string
+        default: "."
 
 permissions:
   contents: read
@@ -22,7 +30,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      image: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:${{ steps.version.outputs.sha }}
+      image: ${{ format('ghcr.io/{0}/{1}:{2}', github.repository_owner, inputs.image_name, steps.version.outputs.sha) }}
       version: ${{ steps.version.outputs.semver }}
       digest: ${{ steps.build.outputs.digest }}
       
@@ -42,30 +50,71 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Derive version
+      - name: Derive version and tags (channel aware)
         id: version
         run: |
-          SEMVER=$(git describe --tags --always --dirty || echo "0.0.0")
-          SHA=${GITHUB_SHA::7}
-          echo "semver=$SEMVER" >> $GITHUB_OUTPUT
-          echo "sha=$SHA" >> $GITHUB_OUTPUT
-          echo "domain=${{ inputs.domain }}" >> $GITHUB_OUTPUT
+          REF="${GITHUB_REF}"
+          TODAY="$(date -u +%Y%m%d)"
+          SHA="${GITHUB_SHA::7}"
+          TAG_FILE="tags.txt"
+          
+          write_output() {
+            echo "$1" >> "$GITHUB_OUTPUT"
+          }
+
+          if [[ "${REF}" == refs/tags/v* ]]; then
+            # Stable release tag: vX.Y.Z
+            VERSION="${REF#refs/tags/}"
+            IFS='.' read -r MAJOR MINOR _PATCH <<< "${VERSION#v}"
+            CHANNEL="stable"
+            write_output "semver=${VERSION}"
+            write_output "channel=${CHANNEL}"
+            {
+              echo "type=raw,value=${VERSION}"
+              echo "type=raw,value=latest"
+              echo "type=raw,value=v${MAJOR}.${MINOR}"
+              echo "type=raw,value=v${MAJOR}"
+              echo "type=raw,value=${SHA}"
+            } > "${TAG_FILE}"
+          elif [[ "${REF}" == refs/heads/release/* ]]; then
+            # Release branch beta: release/x.y -> vX.Y.0-beta.<run>
+            BASE="${REF#refs/heads/release/}"
+            VERSION="v${BASE}.0-beta.${GITHUB_RUN_NUMBER}"
+            CHANNEL="beta"
+            write_output "semver=${VERSION}"
+            write_output "channel=${CHANNEL}"
+            {
+              echo "type=raw,value=${VERSION}"
+              echo "type=raw,value=${VERSION}-run${GITHUB_RUN_ATTEMPT}"
+              echo "type=raw,value=${SHA}"
+            } > "${TAG_FILE}"
+          else
+            # Default to nightly edge off main and other branches
+            VERSION="edge-${GITHUB_REF_NAME:-main}-${TODAY}"
+            CHANNEL="nightly"
+            write_output "semver=${VERSION}"
+            write_output "channel=${CHANNEL}"
+            {
+              echo "type=raw,value=${VERSION}"
+              echo "type=sha,prefix=${GITHUB_REF_NAME:-main}-"
+              echo "type=raw,value=${SHA}"
+            } > "${TAG_FILE}"
+          fi
+
+          {
+            echo "sha=${SHA}"
+            echo "domain=${{ inputs.domain }}"
+            echo "tags<<EOF"
+            cat "${TAG_FILE}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-            type=raw,value=${{ steps.version.outputs.sha }}
-            type=raw,value=${{ steps.version.outputs.semver }}
+          tags: ${{ steps.version.outputs.tags }}
           labels: |
             org.opencontainers.image.title=${{ inputs.image_name }}
             org.opencontainers.image.description=Unison ${{ inputs.domain }} service
@@ -79,7 +128,8 @@ jobs:
         id: build
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ${{ inputs.context }}
+          file: ${{ inputs.dockerfile }}
           push: true
           platforms: linux/amd64,linux/arm64
           tags: ${{ steps.meta.outputs.tags }}
@@ -96,7 +146,7 @@ jobs:
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}:${{ steps.version.outputs.sha }}
+          image: ${{ format('ghcr.io/{0}/{1}:{2}', github.repository_owner, inputs.image_name, steps.version.outputs.sha) }}
           format: spdx-json
           output-file: sbom.spdx.json
 
@@ -158,3 +208,40 @@ jobs:
       - name: Cleanup
         if: always()
         run: docker stop service-under-test && docker rm service-under-test
+
+  qa-smoke:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Detect QA smoke assets
+        id: qa_assets
+        shell: bash
+        run: |
+          if [[ -f docker-compose.prod.yml ]] && [[ -d qa ]] && compgen -G "qa/**" > /dev/null; then
+            echo "run=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "run=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Start compose stack (prod)
+        if: ${{ steps.qa_assets.outputs.run == 'true' }}
+        run: |
+          docker compose -f docker-compose.prod.yml up -d --wait
+
+      - name: Run QA smoke
+        if: ${{ steps.qa_assets.outputs.run == 'true' }}
+        env:
+          TARGET_HOST: http://localhost
+        run: |
+          python -m pytest qa -v --tb=short --color=yes
+
+      - name: Logs on failure
+        if: ${{ failure() && steps.qa_assets.outputs.run == 'true' }}
+        run: docker compose -f docker-compose.prod.yml logs --tail=200
+
+      - name: Teardown
+        if: ${{ always() && steps.qa_assets.outputs.run == 'true' }}
+        run: docker compose -f docker-compose.prod.yml down -v --remove-orphans

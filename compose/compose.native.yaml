@@ -1,0 +1,18 @@
+# Unison Platform Milestone 1 Native Runtime Bundle
+#
+# Canonical runtime bundle for the supported Ubuntu 24.04 x86_64 native install path.
+#
+# Design intent:
+# - start from the current platform topology in `compose.yaml`
+# - exclude clearly optional lanes from the default native route
+# - keep optional services out unless explicitly enabled via profile
+#
+# Default behavior:
+# - core services from `compose.yaml` are included
+# - VDI is disabled unless the `vdi` profile is enabled
+# - vision/multimodal I/O lane is disabled unless `vision` or `multimodal` is enabled
+# - `updates` remains opt-in behind the `updates` profile
+# - observability remains opt-in behind the `observability` profile
+
+include:
+  - compose.yaml

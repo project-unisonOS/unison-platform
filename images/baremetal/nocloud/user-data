@@ -1,0 +1,33 @@
+#cloud-config
+autoinstall:
+  version: 1
+  shutdown: poweroff
+  storage:
+    layout:
+      name: direct
+  identity:
+    hostname: unisonos
+    username: unison
+    # Alpha evaluator default password: "unison" (change for real installs).
+    password: "$6$unison$QKpsK2F5iVUE9VumXZhBxxDqjvYCyaY0lUD4iifz9Qpc2K05KkRQ9zCBVYb5FZygbh/Tg4SKFmZ1yFd1HTsIQ0"
+  ssh:
+    install-server: true
+    allow-pw: true
+  locale: en_US
+  keyboard:
+    layout: us
+  updates: security
+  packages:
+    - ca-certificates
+    - curl
+    - git
+    - docker.io
+    - docker-compose-plugin
+  late-commands:
+    # Install Unison platform bundle from the ISO (no git clone required).
+    - curtin in-target --target=/target -- mkdir -p /opt/unison-platform
+    - curtin in-target --target=/target -- tar -xzf /cdrom/nocloud/payload/unison-platform-bundle.tar.gz -C /opt/unison-platform
+    - curtin in-target --target=/target -- env PREFIX=/opt/unison-platform ENV_FILE=/etc/unison/platform.env COMPOSE_FILE=compose/compose.yaml UNISON_SKIP_START=1 bash -c "/opt/unison-platform/installer/install-native.sh"
+    # Ensure enabled at boot even when systemctl isn't active in the installer environment.
+    - curtin in-target --target=/target -- mkdir -p /etc/systemd/system/multi-user.target.wants
+    - curtin in-target --target=/target -- ln -sf /etc/systemd/system/unison-platform.service /etc/systemd/system/multi-user.target.wants/unison-platform.service

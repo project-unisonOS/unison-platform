@@ -1,0 +1,46 @@
+# Example readiness/liveness probes for IO/actuation services
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unison-actuation
+  namespace: io
+spec:
+  template:
+    spec:
+      containers:
+        - name: actuation
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: unison-io-speech
+  namespace: io
+spec:
+  template:
+    spec:
+      containers:
+        - name: io-speech
+          readinessProbe:
+            httpGet:
+              path: /readyz
+              port: 8080
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /healthz
+              port: 8080
+            initialDelaySeconds: 10
+            periodSeconds: 15

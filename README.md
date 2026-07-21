@@ -2,9 +2,14 @@
 
 > **Enterprise-grade intent orchestration platform with one-command deployment and unified developer experience**
 
+> **Note:** This README reflects the standalone `unison-platform` repo. For the current multi-repo workspace (devstack + renderer), follow the workspace-level `unison-docs/dev/developer-guide.md`.
+
 ## 🎯 Overview
 
 The Unison Platform transforms a distributed microservices architecture into a cohesive, manageable system while maintaining development autonomy. It provides **hard interfaces**, **one-click orchestration**, and **consistent CI/CD** across all services.
+
+## Status
+Core docs/meta (active) — platform narrative and installer entrypoint; aligns with devstack and service READMEs.
 
 ### 🏗️ Architecture
 
@@ -66,21 +71,29 @@ make health
 **Best for**: Personal assistants, edge devices, production workstations
 
 ```bash
-# One-command installation (Ubuntu 22.04/24.04)
-curl -sSL https://install.unison.ai | sudo bash
-
-# Or from source
+# From source
 cd unison-platform
 sudo make install-native
 
-# Start services
-sudo unisonctl start
+# Review and update first-run environment
+sudo editor /etc/unison/platform.env
 
-# Check status
+# Start the platform
+sudo unisonctl start
 sudo unisonctl status
 ```
 
 **See [docs/deployment/ubuntu-native.md](docs/deployment/ubuntu-native.md) for complete native installation guide.**
+
+### Evaluation Images (WSL2 / VM / Bare Metal)
+
+Platform images are delivered as GitHub Release assets for evaluation. They are not the primary Milestone 1 install route.
+
+- Install guide (choose one):
+  - `docs/install-wsl2.md`
+  - `docs/install-linux-vm.md`
+  - `docs/install-bare-metal.md`
+- Release strategy (including `latest-*` tags): `docs/release-strategy.md`
 
 ---
 
@@ -105,19 +118,21 @@ Once started, all services are available at:
 
 | Service | Endpoint | Description |
 |---------|----------|-------------|
-| **Orchestrator** | http://localhost:8090 | Main intent orchestration |
-| **Intent Graph** | http://localhost:8080 | Intent processing & decomposition |
-| **Context Graph** | http://localhost:8091 | Context fusion & management |
-| **Experience Renderer** | http://localhost:8092 | Adaptive interface generation |
-| **Agent VDI** | http://localhost:8093 | Virtual display interface |
-| **Auth Service** | http://localhost:8083 | Authentication & authorization |
-| **Context Service** | http://localhost:8081 | Context management |
-| **Policy Service** | http://localhost:8083 | Policy enforcement |
-| **I/O Speech** | http://localhost:8084 | Speech processing |
-| **I/O Vision** | http://localhost:8086 | Vision processing |
+| **Orchestrator** | [http://localhost:8090](http://localhost:8090) | Main intent orchestration |
+| **Intent Graph** | [http://localhost:8080](http://localhost:8080) | Intent processing & decomposition |
+| **Context Graph** | [http://localhost:8091](http://localhost:8091) | Context fusion & management |
+| **Experience Renderer** | [http://localhost:8092](http://localhost:8092) | Adaptive interface generation |
+| **Agent VDI** | [http://localhost:8093](http://localhost:8093) | Virtual display interface |
+| **Auth Service** | [http://localhost:8083](http://localhost:8083) | Authentication & authorization |
+| **Context Service** | [http://localhost:8081](http://localhost:8081) | Context management |
+| **Policy Service** | [http://localhost:8095](http://localhost:8095) | Policy enforcement |
+| **I/O Speech** | [http://localhost:8084](http://localhost:8084) | Speech processing |
+| **I/O Vision** | [http://localhost:8086](http://localhost:8086) | Vision processing |
 | **I/O Core** | http://localhost:8085 | I/O coordination |
 | **Inference** | http://localhost:8087 | ML inference gateway |
 | **Storage** | http://localhost:8082 | Data persistence |
+
+Core host ports can be overridden locally through `.env` values such as `POSTGRES_HOST_PORT`, `REDIS_HOST_PORT`, `AUTH_HOST_PORT`, `POLICY_HOST_PORT`, and `UPDATES_HOST_PORT`.
 
 ## 🛠️ Developer Experience
 
@@ -177,6 +192,13 @@ make shell SERVICE=context-graph
 # Execute command in service
 make exec SERVICE=auth CMD="env | grep SERVICE"
 ```
+
+## Platform Distribution & Deployment
+
+- **images/** – scaffolding for WSL, VM (QCOW2/VMDK), and bare-metal ISO builders (Ubuntu autoinstall). Targets will share common provisioners for Docker, platform Compose, local models, and systemd units.
+- **installer/** – curl|bash entrypoints and install scripts for native Ubuntu, Docker hosts, and WSL. Will emit configs and systemd units for boot-time start.
+- **qa/** – end-to-end and hardware smoke tests invoked by CI and release workflows.
+- Roadmap: see `unison-docs/roadmap/deployment-platform-roadmap.md` for phased implementation.
 
 ## 🏗️ Platform Architecture
 
@@ -386,6 +408,12 @@ docker compose -f compose/compose.pinned.yaml up -d
 4. **Release Bundle**: Generated compose files and artifacts
 5. **Deployment**: Reproducible deployment with pinned versions
 
+## ✅ Status and Testing
+Core docs/meta (active). Keep aligned with the workspace guides:
+- Workspace developer guide: `../unison-docs/dev/developer-guide.md`
+- Repo map: `../unison-docs/dev/unison-repo-map.md`
+- Docs lint: `npx --yes markdownlint-cli2`
+
 ## 📚 Documentation
 
 ### Architecture Documentation
@@ -474,6 +502,10 @@ docker stats
 - **[Issues](https://github.com/project-unisonos/unison-platform/issues)**: Bug reports and feature requests
 - **[Discussions](https://github.com/project-unisonos/unison-platform/discussions)**: Community discussions
 - **[Documentation](docs/)**: Comprehensive documentation
+
+## Docs
+
+Full docs at https://project-unisonos.github.io
 
 ## 📄 License
 
