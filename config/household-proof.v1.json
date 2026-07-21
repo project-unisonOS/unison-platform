@@ -1,0 +1,22 @@
+{
+  "schema_version": "unison.household-proof-profile.v1",
+  "profile": "two-independent-adults",
+  "bounded": true,
+  "assistant_count": 2,
+  "shared_artifacts": ["calendar_event", "grocery_item"],
+  "resource_policy": {
+    "total_concurrent_tasks": 2,
+    "per_assistant": {
+      "max_concurrent_tasks": 1,
+      "max_queued_tasks": 16,
+      "cpu_units": 1,
+      "memory_mb": 512
+    }
+  },
+  "excluded_models": ["child", "dependent", "caregiving", "incapacity", "emergency_access"],
+  "private_boundaries": [
+    "messages", "credentials", "goals", "charter", "memory", "indexes",
+    "audit", "backup", "cache", "prompt", "model", "trace", "logs"
+  ]
+}
+
