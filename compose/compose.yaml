@@ -63,7 +63,7 @@ services:
     ports:
       - "${AUTH_HOST_PORT:-8083}:8088"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-auth
       SERVICE_PORT: 8088
@@ -117,7 +117,7 @@ services:
     ports:
       - "${CONTEXT_HOST_PORT:-8081}:8081"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-context
       SERVICE_PORT: 8081
@@ -153,7 +153,7 @@ services:
     ports:
       - "${POLICY_HOST_PORT:-8095}:8083"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-policy
       SERVICE_PORT: 8083
@@ -181,7 +181,7 @@ services:
     ports:
       - "${ORCHESTRATOR_HOST_PORT:-8090}:8080"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-orchestrator
       SERVICE_PORT: 8080
@@ -226,7 +226,7 @@ services:
     ports:
       - "${UPDATES_HOST_PORT:-8094}:8089"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-updates
       SERVICE_PORT: 8089
@@ -254,7 +254,7 @@ services:
     ports:
       - "${INTENT_GRAPH_HOST_PORT:-8080}:8080"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-intent-graph
       SERVICE_PORT: 8080
@@ -280,7 +280,7 @@ services:
     ports:
       - "${CONTEXT_GRAPH_HOST_PORT:-8091}:8081"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-context-graph
       SERVICE_PORT: 8081
@@ -308,7 +308,7 @@ services:
     ports:
       - "${EXPERIENCE_RENDERER_HOST_PORT:-8092}:8082"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-experience-renderer
       SERVICE_PORT: 8082
@@ -319,6 +319,7 @@ services:
       INFERENCE_BASE_URL: http://inference:8087
       UNISON_AUTH_SERVICE_URL: http://auth:8088
       AUTH_BASE_URL: http://auth:8088
+      COMMS_BASE_URL: http://comms:8080
       REDIS_HOST: redis
     depends_on:
       intent-graph:
@@ -326,6 +327,8 @@ services:
       context-graph:
         condition: service_healthy
       orchestrator:
+        condition: service_healthy
+      comms:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -337,6 +340,53 @@ services:
     networks:
       - unison-network
 
+  comms:
+    image: ghcr.io/project-unisonos/unison-comms:${UNISON_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    expose:
+      - "8080"
+    environment:
+      SERVICE_NAME: unison-comms
+      COMMS_HOST: 0.0.0.0
+      COMMS_UNSAFE_ALLOW_NONLOCAL: "true"
+      AUTH_URL: http://auth:8088
+      AUTH_CHANNEL_WORKLOAD_ID: unison-comms-channel-gateway
+      AUTH_CHANNEL_WORKLOAD_SECRET_FILE: /run/secrets/unison_channel_workload_secret
+      CHANNEL_GATEWAY_ROOT_KEY_FILE: /run/secrets/unison_channel_root
+      CHANNEL_GATEWAY_DB: /data/comms/channel-gateway.db
+    volumes:
+      - comms_data:/data/comms
+    secrets: [unison_channel_workload_secret, unison_channel_root]
+    depends_on:
+      auth:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - unison-network
+
+  telegram-channel-worker:
+    image: ghcr.io/project-unisonos/unison-comms:${UNISON_IMAGE_TAG:-latest}
+    restart: unless-stopped
+    command: ["python", "src/run_telegram_worker.py"]
+    environment:
+      AUTH_URL: http://auth:8088
+      AUTH_CHANNEL_WORKLOAD_ID: unison-comms-channel-gateway
+      AUTH_CHANNEL_WORKLOAD_SECRET_FILE: /run/secrets/unison_channel_workload_secret
+      CHANNEL_GATEWAY_ROOT_KEY_FILE: /run/secrets/unison_channel_root
+      CHANNEL_GATEWAY_DB: /data/comms/channel-gateway.db
+    volumes:
+      - comms_data:/data/comms
+    secrets: [unison_channel_workload_secret, unison_channel_root]
+    depends_on:
+      comms:
+        condition: service_healthy
+    networks:
+      - unison-network
+
   agent-vdi:
     image: ghcr.io/project-unisonos/unison-agent-vdi:${UNISON_IMAGE_TAG:-latest}
     profiles:
@@ -345,7 +395,7 @@ services:
     ports:
       - "${AGENT_VDI_HOST_PORT:-8093}:8083"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-agent-vdi
       SERVICE_PORT: 8083
@@ -380,7 +430,7 @@ services:
     ports:
       - "${IO_SPEECH_HOST_PORT:-8084}:8084"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-io-speech
       SERVICE_PORT: 8084
@@ -408,7 +458,7 @@ services:
     ports:
       - "${IO_VISION_HOST_PORT:-8086}:8086"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-io-vision
       SERVICE_PORT: 8086
@@ -436,7 +486,7 @@ services:
     ports:
       - "${IO_CORE_HOST_PORT:-8085}:8085"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-io-core
       SERVICE_PORT: 8085
@@ -468,7 +518,7 @@ services:
     ports:
       - "${INFERENCE_HOST_PORT:-8087}:8087"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-inference
       SERVICE_PORT: 8087
@@ -501,7 +551,7 @@ services:
     ports:
       - "${STORAGE_HOST_PORT:-8082}:8082"
     env_file:
-      - ../.env
+      - ${UNISON_COMPOSE_ENV_FILE:-../.env}
     environment:
       SERVICE_NAME: unison-storage
       SERVICE_PORT: 8082
@@ -593,6 +643,8 @@ volumes:
     driver: local
   updates_data:
     driver: local
+  comms_data:
+    driver: local
 
 secrets:
   unison_bootstrap_token:
@@ -601,6 +653,10 @@ secrets:
     file: ${UNISON_KEYS_DIR:-../data/keys}/context-root
   unison_storage_root:
     file: ${UNISON_KEYS_DIR:-../data/keys}/storage-root
+  unison_channel_root:
+    file: ${UNISON_KEYS_DIR:-../data/keys}/channel-root
+  unison_channel_workload_secret:
+    file: ${UNISON_KEYS_DIR:-../data/keys}/channel-workload-secret
 
 networks:
   unison-network:
