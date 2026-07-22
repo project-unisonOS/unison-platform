@@ -163,7 +163,7 @@ jobs:
           path: sbom.spdx.json
 
       - name: Generate provenance attestation
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         with:
           subject-name: ${{ steps.version.outputs.image_base }}
           subject-digest: ${{ steps.build.outputs.digest }}
