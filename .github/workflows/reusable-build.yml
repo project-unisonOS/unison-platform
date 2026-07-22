@@ -30,7 +30,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     outputs:
-      image: ${{ format('ghcr.io/{0}/{1}:{2}', github.repository_owner, inputs.image_name, steps.version.outputs.sha) }}
+      image: ${{ steps.version.outputs.image }}
       version: ${{ steps.version.outputs.semver }}
       digest: ${{ steps.build.outputs.digest }}
       
@@ -104,6 +104,9 @@ jobs:
           {
             echo "sha=${SHA}"
             echo "domain=${{ inputs.domain }}"
+            OWNER_LOWER="${GITHUB_REPOSITORY_OWNER,,}"
+            echo "image_base=ghcr.io/${OWNER_LOWER}/${{ inputs.image_name }}"
+            echo "image=ghcr.io/${OWNER_LOWER}/${{ inputs.image_name }}:${SHA}"
             echo "tags<<EOF"
             cat "${TAG_FILE}"
             echo "EOF"
@@ -113,7 +116,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}
+          images: ${{ steps.version.outputs.image_base }}
           tags: ${{ steps.version.outputs.tags }}
           labels: |
             org.opencontainers.image.title=${{ inputs.image_name }}
@@ -146,7 +149,7 @@ jobs:
       - name: Generate SBOM
         uses: anchore/sbom-action@v0
         with:
-          image: ${{ format('ghcr.io/{0}/{1}:{2}', github.repository_owner, inputs.image_name, steps.version.outputs.sha) }}
+          image: ${{ steps.version.outputs.image }}
           format: spdx-json
           output-file: sbom.spdx.json
 
@@ -159,7 +162,7 @@ jobs:
       - name: Generate provenance attestation
         uses: actions/attest-build-provenance@v1
         with:
-          subject-name: ghcr.io/${{ github.repository_owner }}/${{ inputs.image_name }}
+          subject-name: ${{ steps.version.outputs.image_base }}
           subject-digest: ${{ steps.build.outputs.digest }}
           push-to-registry: true
 
