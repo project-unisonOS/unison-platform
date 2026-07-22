@@ -167,6 +167,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: build
     steps:
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
@@ -185,6 +192,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Start service container
         run: |
@@ -207,7 +221,7 @@ jobs:
 
       - name: Cleanup
         if: always()
-        run: docker stop service-under-test && docker rm service-under-test
+        run: docker rm -f service-under-test 2>/dev/null || true
 
   qa-smoke:
     runs-on: ubuntu-latest
@@ -215,6 +229,13 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Detect QA smoke assets
         id: qa_assets
