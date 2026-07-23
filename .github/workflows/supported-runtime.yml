@@ -27,3 +27,5 @@ jobs:
         run: ./scripts/validate-supported-runtime.py
       - name: Validate deterministic release manifest
         run: ./scripts/test_supported_manifest.py
+      - name: Simulate installer preflight matrix
+        run: ./scripts/test_installer_preflight.py
