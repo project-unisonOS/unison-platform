@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "operating_system": "Ubuntu 24.04 LTS",
+  "architecture": "x86_64",
+  "boot": "UEFI",
+  "packages": {
+    "docker-ce": ">=26.0,<30.0",
+    "docker-compose-plugin": ">=2.24,<3.0",
+    "ca-certificates": ">=20230311",
+    "curl": ">=8.5"
+  },
+  "resources": {
+    "cpu_cores_min": 4,
+    "ram_gb_min": 8,
+    "disk_gb_min": 20
+  }
+}

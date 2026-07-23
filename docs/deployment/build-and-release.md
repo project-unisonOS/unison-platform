@@ -39,3 +39,23 @@ This doc summarizes the build outputs, how to use them, and how they relate to G
 - For ISO: bake `images/out/unisonos-iso-<version>/autoinstall/*` into an Ubuntu Server ISO using `xorriso`/`mkisofs`; late-commands install platform and enable `unison-platform.service`.
 - For VM images: the CI build path uses Ubuntu cloud images + libguestfs customization (no KVM required); the image provisions the platform on first boot via a systemd unit.
 - For WSL: distribute `unisonos-wsl-<version>.tar.gz`; extract, set env, run the bundled evaluator compose flow described by the release docs for that artifact.
+# Supported release manifest
+
+The Phase 9 supported bundle uses `scripts/generate_supported_manifest.py`,
+not the legacy local-development manifest, as its immutable bill of materials.
+Release automation supplies an image environment containing one registry digest
+for each supported service and a protected `SOURCE_DATE_EPOCH`:
+
+```bash
+SOURCE_DATE_EPOCH=1784764800 \
+  ./scripts/generate_supported_manifest.py \
+  --version v0.1.0-rc.1 \
+  --images-env release-assets/supported-images.env \
+  --out release-assets/manifest.json
+```
+
+Publication rejects missing, mutable, or example zero digests. The manifest
+records the source commit, normalized build time, supported Compose hash, image
+digests, host/package/resource contract, schema/configuration/backup versions,
+model-profile hash, and declared licenses. Repeating the command from the same
+source and inputs produces byte-identical output.

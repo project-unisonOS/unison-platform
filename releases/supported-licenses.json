@@ -1,0 +1,19 @@
+{
+  "schema_version": 1,
+  "project": "Apache-2.0",
+  "images": {
+    "auth": "Apache-2.0",
+    "context": "Apache-2.0",
+    "context-graph": "Apache-2.0",
+    "experience-renderer": "Apache-2.0",
+    "inference": "Apache-2.0",
+    "intent-graph": "Apache-2.0",
+    "io-speech": "Apache-2.0",
+    "nats": "Apache-2.0",
+    "orchestrator": "Apache-2.0",
+    "policy": "Apache-2.0",
+    "postgres": "PostgreSQL",
+    "redis": "RSALv2-or-SSPLv1",
+    "storage": "Apache-2.0"
+  }
+}

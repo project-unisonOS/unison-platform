@@ -25,3 +25,5 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
       - name: Validate digest and exposure contract
         run: ./scripts/validate-supported-runtime.py
+      - name: Validate deterministic release manifest
+        run: ./scripts/test_supported_manifest.py
