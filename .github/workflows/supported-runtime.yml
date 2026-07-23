@@ -1,0 +1,27 @@
+name: Supported runtime contract
+
+on:
+  push:
+    paths:
+      - "compose/compose.supported.yaml"
+      - "releases/supported-images.example.env"
+      - "scripts/validate-supported-runtime.py"
+      - ".github/workflows/supported-runtime.yml"
+  pull_request:
+    paths:
+      - "compose/compose.supported.yaml"
+      - "releases/supported-images.example.env"
+      - "scripts/validate-supported-runtime.py"
+      - ".github/workflows/supported-runtime.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  static-contract:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - name: Validate digest and exposure contract
+        run: ./scripts/validate-supported-runtime.py

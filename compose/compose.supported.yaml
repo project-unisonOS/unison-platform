@@ -1,0 +1,49 @@
+# Phase 9 supported-runtime override.
+#
+# Release assembly must substitute every required variable with a registry
+# digest. Docker Compose rejects the profile when any value is absent.
+include:
+  - compose.yaml
+
+services:
+  redis:
+    image: ${UNISON_REDIS_IMAGE:?digest-pinned Redis image required}
+    ports: !reset []
+  postgres:
+    image: ${UNISON_POSTGRES_IMAGE:?digest-pinned PostgreSQL image required}
+    ports: !reset []
+  nats:
+    image: ${UNISON_NATS_IMAGE:?digest-pinned NATS image required}
+    ports: !reset []
+  auth:
+    image: ${UNISON_AUTH_IMAGE:?digest-pinned auth image required}
+    ports: !reset []
+  context:
+    image: ${UNISON_CONTEXT_IMAGE:?digest-pinned context image required}
+    ports: !reset []
+  policy:
+    image: ${UNISON_POLICY_IMAGE:?digest-pinned policy image required}
+    ports: !reset []
+  orchestrator:
+    image: ${UNISON_ORCHESTRATOR_IMAGE:?digest-pinned orchestrator image required}
+    ports:
+      - "127.0.0.1:${ORCHESTRATOR_HOST_PORT:-8090}:8080"
+  intent-graph:
+    image: ${UNISON_INTENT_GRAPH_IMAGE:?digest-pinned intent-graph image required}
+    ports: !reset []
+  context-graph:
+    image: ${UNISON_CONTEXT_GRAPH_IMAGE:?digest-pinned context-graph image required}
+    ports: !reset []
+  experience-renderer:
+    image: ${UNISON_RENDERER_IMAGE:?digest-pinned renderer image required}
+    ports:
+      - "127.0.0.1:${RENDERER_HOST_PORT:-8092}:8082"
+  io-speech:
+    image: ${UNISON_SPEECH_IMAGE:?digest-pinned speech image required}
+    ports: !reset []
+  inference:
+    image: ${UNISON_INFERENCE_IMAGE:?digest-pinned inference image required}
+    ports: !reset []
+  storage:
+    image: ${UNISON_STORAGE_IMAGE:?digest-pinned storage image required}
+    ports: !reset []
