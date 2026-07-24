@@ -1,6 +1,6 @@
 {
   "schema_version": "unison.preview.source-correspondence.v1",
-  "common_wheel_image": "ghcr.io/project-unisonos/unison-common-wheel@sha256:589ac7c47eee3598a511c3ee2014c23a512700f1ae4fd7abd69adb072c1f4ce6",
+  "common_source_commit": "56a1f535e3a6723d14d0ca09e0952aa54bcfb63d",
   "images": {
     "unison-auth": "02c0e26bec35a3dc4797de7a8da726ee70d271a7",
     "unison-context": "9a339f6c17248f3e17f3b2fc1c4e5195504f2447",

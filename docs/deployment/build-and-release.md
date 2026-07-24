@@ -28,8 +28,8 @@ older alpha releases.
 
 The workflow accepts only preview-formatted versions. It rebuilds every project
 image from the exact source commits in
-`releases/preview-source-correspondence.v1.json`, replaces mutable common-wheel
-inputs with an immutable digest, and publishes only linux/amd64 images.
+`releases/preview-source-correspondence.v1.json`, builds the common wheel from
+its exact source commit, and publishes only linux/amd64 images.
 
 Each image receives BuildKit SBOM and provenance attestations, a keyless Cosign
 signature, and a critical-severity vulnerability scan. The assembly job rejects
