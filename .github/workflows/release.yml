@@ -48,7 +48,7 @@ jobs:
           - { repository: unison-context, commit: 9a339f6c17248f3e17f3b2fc1c4e5195504f2447 }
           - { repository: unison-policy, commit: 83eb4e8fd5a60148cd7d28a85cb64f6e6e1335cb }
           - { repository: unison-orchestrator, commit: 16d5b491b2cb57df167c5d75f92863c5ca679bb0 }
-          - { repository: unison-intent-graph, commit: a19044b15c34b652c6aa273c56a80357eb5652b9 }
+          - { repository: unison-intent-graph, commit: 808fbd30ab80aa3ae699b49290cff750576f50e6 }
           - { repository: unison-context-graph, commit: 092da683f6cd8b10905a8cb5cd21ca9c8566b944 }
           - { repository: unison-experience-renderer, commit: 5dd4b3c9b0074982a35af837aa08a28dd6f395df }
           - { repository: unison-io-speech, commit: d942222aa5329dbf29da8bb88c1e33c296e2856c }
@@ -100,7 +100,7 @@ jobs:
           push: true
           sbom: true
           provenance: mode=max
-          tags: ghcr.io/project-unisonos/${{ matrix.repository }}:${{ needs.validate.outputs.version }}
+          tags: ghcr.io/project-unisonos/unison-platform-${{ matrix.repository }}:${{ needs.validate.outputs.version }}
           build-args: |
             REPO_PATH=.
             UNISON_COMMON_REF=56a1f535e3a6723d14d0ca09e0952aa54bcfb63d
@@ -114,7 +114,7 @@ jobs:
         uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb
       - name: Sign and verify image identity
         env:
-          IMAGE: ghcr.io/project-unisonos/${{ matrix.repository }}@${{ steps.build.outputs.digest }}
+          IMAGE: ghcr.io/project-unisonos/unison-platform-${{ matrix.repository }}@${{ steps.build.outputs.digest }}
         run: |
           cosign sign --yes "$IMAGE"
           cosign verify "$IMAGE" \
@@ -124,7 +124,7 @@ jobs:
         id: scan
         uses: anchore/scan-action@1638637db639e0ade3258b51db49a9a137574c3e
         with:
-          image: ghcr.io/project-unisonos/${{ matrix.repository }}@${{ steps.build.outputs.digest }}
+          image: ghcr.io/project-unisonos/unison-platform-${{ matrix.repository }}@${{ steps.build.outputs.digest }}
           fail-build: true
           severity-cutoff: critical
           output-format: json
@@ -134,6 +134,7 @@ jobs:
           REPOSITORY: ${{ matrix.repository }}
           SOURCE_COMMIT: ${{ matrix.commit }}
           IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          IMAGE_REPOSITORY: ghcr.io/project-unisonos/unison-platform-${{ matrix.repository }}
           RECIPE_SHA: ${{ steps.recipe.outputs.sha256 }}
         run: |
           python3 - <<'PY'
@@ -142,6 +143,7 @@ jobs:
               "repository": os.environ["REPOSITORY"],
               "source_commit": os.environ["SOURCE_COMMIT"],
               "digest": os.environ["IMAGE_DIGEST"],
+              "image_repository": os.environ["IMAGE_REPOSITORY"],
               "effective_dockerfile_sha256": os.environ["RECIPE_SHA"],
           }
           with open(f'{record["repository"]}.json', "w") as handle:

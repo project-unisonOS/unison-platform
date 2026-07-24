@@ -36,6 +36,10 @@ signature, and a critical-severity vulnerability scan. The assembly job rejects
 missing image evidence, records effective Dockerfile hashes, produces the signed
 bundle, and verifies the complete release set before publication.
 
+Preview images use platform-owned `unison-platform-unison-*` GHCR package names.
+This gives the release workflow least-privilege write access without granting it
+administrative access to the service repositories' normal package channels.
+
 After publication, a separate job downloads the public GitHub Release assets,
 verifies checksums and signatures, validates the bundle and provenance, runs an
 installation transaction in a temporary prefix, and confirms incomplete or
