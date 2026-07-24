@@ -238,9 +238,15 @@ jobs:
         run: |
           cp -a public-assets incomplete-assets
           rm "incomplete-assets/unisonos-${VERSION}-manifest.json"
-          ! python3 scripts/verify_preview_release.py \
-            --version "$VERSION" --assets-dir incomplete-assets
+          if python3 scripts/verify_preview_release.py \
+            --version "$VERSION" --assets-dir incomplete-assets; then
+            echo "Incomplete mirror was accepted" >&2
+            exit 1
+          fi
           cp -a public-assets tampered-assets
           printf '\ntampered\n' >> "tampered-assets/unisonos-${VERSION}-sources.json"
-          ! python3 scripts/verify_preview_release.py \
-            --version "$VERSION" --assets-dir tampered-assets
+          if python3 scripts/verify_preview_release.py \
+            --version "$VERSION" --assets-dir tampered-assets; then
+            echo "Tampered mirror was accepted" >&2
+            exit 1
+          fi
