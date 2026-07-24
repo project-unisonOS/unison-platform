@@ -1,6 +1,7 @@
 {
   "schema_version": "unison.preview.source-correspondence.v1",
   "common_source_commit": "56a1f535e3a6723d14d0ca09e0952aa54bcfb63d",
+  "python_base_image": "python:3.12-slim@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de",
   "images": {
     "unison-auth": "02c0e26bec35a3dc4797de7a8da726ee70d271a7",
     "unison-context": "9a339f6c17248f3e17f3b2fc1c4e5195504f2447",

@@ -17,6 +17,7 @@ For version `vX.Y.Z-preview.N`, the workflow publishes:
 - `unisonos-vX.Y.Z-preview.N.spdx.json`: aggregate SPDX runtime inventory
 - `unisonos-vX.Y.Z-preview.N-provenance.json`: bundle provenance statement
 - `unisonos-vX.Y.Z-preview.N-support.json`: machine-readable support status
+- `unisonos-vX.Y.Z-preview.N-vulnerabilities.json`: per-image scan summary
 - `unisonos-preview-bundle-ed25519.pem`: preview verification key
 - `SHA256SUMS` and `SHA256SUMS.ed25519`: asset integrity evidence
 - Sigstore bundles for the JSON evidence and checksum inventory
@@ -32,9 +33,12 @@ image from the exact source commits in
 its exact source commit, and publishes only linux/amd64 images.
 
 Each image receives BuildKit SBOM and provenance attestations, a keyless Cosign
-signature, and a critical-severity vulnerability scan. The assembly job rejects
-missing image evidence, records effective Dockerfile hashes, produces the signed
-bundle, and verifies the complete release set before publication.
+signature, and a vulnerability scan. The preview gate rejects any critical
+finding for which a fix exists. No-fix critical findings remain visible in the
+published summary and keep this channel in unsupported-preview status. The
+assembly job rejects missing scan or image evidence, records effective
+Dockerfile hashes, produces the signed bundle, and verifies the complete
+release set before publication.
 
 Preview images use platform-owned `unison-platform-unison-*` GHCR package names.
 This gives the release workflow least-privilege write access without granting it
