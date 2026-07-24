@@ -296,6 +296,16 @@ def main() -> None:
             ).apply(v2, tampered),
             "signature threshold",
         )
+        expired_root = fixtures / "expired-update-root.json"
+        expired = json.loads(trusted_update_root.read_text())
+        expired["signed"]["expires"] = "2026-07-23T00:00:00Z"
+        expired_root.write_text(json.dumps(expired) + "\n")
+        expect_failure(
+            lambda: engine(
+                prefix, data, public_key, expired_root, lambda *_: True
+            ).apply(v2, authorization(v2, "v0.2.0", 2, private_key)),
+            "trusted update root is expired",
+        )
 
     print(
         "[PASS] Verified targets checkpoint, stage, promote, resume, and roll back "
