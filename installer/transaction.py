@@ -30,6 +30,7 @@ class Installer:
         self.data_dir = data_dir
         self.releases = prefix / "releases"
         self.state = prefix / "install-state.json"
+        self.receipt = prefix / "install-receipt.json"
         self.current = prefix / "current"
 
     def _write_state(self, **values) -> None:
@@ -45,7 +46,14 @@ class Installer:
         link.symlink_to(target.relative_to(self.prefix))
         os.replace(link, self.current)
 
-    def install(self, bundle: Path, version: str, fail_at: str = "") -> dict:
+    def _write_receipt(self, receipt: dict) -> None:
+        temporary = self.receipt.with_suffix(".tmp")
+        temporary.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n")
+        os.replace(temporary, self.receipt)
+
+    def install(
+        self, bundle: Path, version: str, fail_at: str = "", receipt: dict | None = None
+    ) -> dict:
         if not bundle.is_dir() or not version or "/" in version:
             raise ValueError("bundle directory and simple version are required")
         bundle_hash = tree_digest(bundle)
@@ -53,6 +61,8 @@ class Installer:
         if target.is_dir() and tree_digest(target) == bundle_hash:
             self._activate(target)
             self._write_state(status="installed", version=version, bundle_sha256=bundle_hash)
+            if receipt is not None:
+                self._write_receipt(receipt)
             return {"status": "already-installed", "version": version}
 
         staging = self.releases / f".{version}.staging"
@@ -74,6 +84,8 @@ class Installer:
                 raise RuntimeError("injected interruption before activation")
             self._activate(target)
             self._write_state(status="installed", version=version, bundle_sha256=bundle_hash)
+            if receipt is not None:
+                self._write_receipt(receipt)
             return {"status": "installed", "version": version}
         except Exception as error:
             shutil.rmtree(staging, ignore_errors=True)
@@ -103,6 +115,7 @@ class Installer:
         self.current.unlink(missing_ok=True)
         shutil.rmtree(self.releases, ignore_errors=True)
         self.state.unlink(missing_ok=True)
+        self.receipt.unlink(missing_ok=True)
         if purge_data:
             shutil.rmtree(self.data_dir, ignore_errors=True)
         return {"status": "removed", "personal_data": "destroyed" if purge_data else "preserved"}
