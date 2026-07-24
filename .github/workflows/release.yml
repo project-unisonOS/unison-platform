@@ -102,6 +102,7 @@ jobs:
           provenance: mode=max
           tags: ghcr.io/project-unisonos/${{ matrix.repository }}:${{ needs.validate.outputs.version }}
           build-args: |
+            REPO_PATH=.
             UNISON_COMMON_REF=56a1f535e3a6723d14d0ca09e0952aa54bcfb63d
             GIT_SHA=${{ matrix.commit }}
             BUILD_TIME=1970-01-01T00:00:00Z
