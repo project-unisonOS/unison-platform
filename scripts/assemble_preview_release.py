@@ -64,7 +64,10 @@ def main() -> None:
         digest = item["digest"]
         if not digest.startswith("sha256:") or len(digest) != 71:
             raise SystemExit(f"{repo}: invalid image digest")
-        images[repo.removeprefix("unison-")] = f"ghcr.io/project-unisonos/{repo}@{digest}"
+        image_repository = item["image_repository"]
+        if image_repository != f"ghcr.io/project-unisonos/unison-platform-{repo}":
+            raise SystemExit(f"{repo}: unexpected release image repository")
+        images[repo.removeprefix("unison-")] = f"{image_repository}@{digest}"
         sources[repo] = item["source_commit"]
         recipes[repo] = item["effective_dockerfile_sha256"]
     if set(sources) != set(correspondence["images"]):
