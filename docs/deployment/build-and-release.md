@@ -1,61 +1,58 @@
-# Platform Images, Installers, and Releases
+# Platform builds and preview releases
 
-This doc summarizes the build outputs, how to use them, and how they relate to GHCR/tagging once releases are cut.
+The canonical downloadable appliance artifact is the signed x86_64 bundle
+published by `.github/workflows/preview-release.yml`. The initial release
+channel is explicitly an unsupported software preview. Physical appliance
+compatibility, install, update, rollback, and recovery validation remain
+pending.
 
-## Build Outputs (images/out/)
-- `unisonos-wsl-<version>.tar.gz` — WSL bundle (compose, env template, models manifest).
-- `unisonos-linux-vm-<version>.qcow2` — Bootable Ubuntu VM disk image (built from Ubuntu cloud image; provisions UnisonOS on first boot).
-- `unisonos-baremetal-installer-<version>.iso` — Full Ubuntu Server installer ISO remastered with embedded autoinstall payload (not seed-only).
-- Version defaults to `git describe --tags --always` unless `VERSION` env is set; `MODEL_FLAVOR` selects model profile (`images/models.yaml`).
-- Default base OS: Ubuntu 24.04 (override with `UBUNTU_VERSION`/`UBUNTU_TAG` where applicable).
+## Preview release contents
 
-## Make Targets
-- `make image-wsl` — builds WSL tarball.
-- `make linux-vm` — writes VM QCOW2 (and optional VMDK).
-- `make baremetal-iso` — writes the remastered installer ISO with embedded autoinstall payload.
-- `make qa-smoke` — runs platform health + inference smoke tests (used in CI).
-- `release.yml` workflow — on `v*` tags, installs tooling, builds release artifacts, uploads them, and attaches them to GitHub Releases. For alpha tags, the workflow is native-first and may also attach evaluator artifacts.
+For version `vX.Y.Z-preview.N`, the workflow publishes:
 
-## Installers (`installer/`)
-- `install-docker.sh` — assumes Docker/Compose present; seeds `/etc/unison/platform.env`, installs `unison-platform.service`, and pulls images.
-- `install-native.sh` — installs Docker/Compose if missing, then follows the same bundle/env/systemd flow as the docker installer.
-- `install-wsl.sh` — WSL-friendly path; installs Docker if needed, seeds env, and pulls images for evaluation environments.
-- Shared helpers in `installer/common.sh`.
+- `unisonos-vX.Y.Z-preview.N-x86_64.tar`: signed install and update bundle
+- `unisonos-vX.Y.Z-preview.N-manifest.json`: immutable runtime bill of materials
+- `unisonos-vX.Y.Z-preview.N-images.env`: digest-pinned image inventory
+- `unisonos-vX.Y.Z-preview.N-sources.json`: image-to-source correspondence
+- `unisonos-vX.Y.Z-preview.N.spdx.json`: aggregate SPDX runtime inventory
+- `unisonos-vX.Y.Z-preview.N-provenance.json`: bundle provenance statement
+- `unisonos-vX.Y.Z-preview.N-support.json`: machine-readable support status
+- `unisonos-preview-bundle-ed25519.pem`: preview verification key
+- `SHA256SUMS` and `SHA256SUMS.ed25519`: asset integrity evidence
+- Sigstore bundles for the JSON evidence and checksum inventory
 
-## GHCR/Tagging (planned)
-- Images are published as `ghcr.io/project-unisonos/<service>:<tag>`:
-  - Nightly: `:edge-main-YYYYMMDD` (from `main`).
-  - Beta: `:vX.Y.0-beta.N` (from `release/x.y`).
-  - Stable: `:vX.Y.Z` and `:latest` for platform.
-- Platform artifacts for the supported native install path are attached to GitHub Releases in `unison-platform` for tagged versions.
-- For alpha releases, this includes explicit native-install-first assets such as the native installer, `unisonctl`, native env template, native compose bundle, and native install docs.
-- Evaluator artifacts (WSL/VM/ISO) may also be attached when produced for that release.
-- Model manifest (`images/models.yaml`) drives model preload selection; include rendered `models.json` with published artifacts.
-- Service repos can call the shared workflow `project-unisonOS/unison-platform/.github/workflows/reusable-build.yml@main` to inherit the same tag semantics and GHCR labels.
+The release notes are the download authority. Do not infer current assets from
+older alpha releases.
 
-## Usage Notes
-- Before publishing artifacts, ensure secrets in `/etc/unison/platform.env` are rotated and production values replace template defaults.
-- First start is intentionally blocked when `/etc/unison/platform.env` still contains template or development defaults.
-- For ISO: bake `images/out/unisonos-iso-<version>/autoinstall/*` into an Ubuntu Server ISO using `xorriso`/`mkisofs`; late-commands install platform and enable `unison-platform.service`.
-- For VM images: the CI build path uses Ubuntu cloud images + libguestfs customization (no KVM required); the image provisions the platform on first boot via a systemd unit.
-- For WSL: distribute `unisonos-wsl-<version>.tar.gz`; extract, set env, run the bundled evaluator compose flow described by the release docs for that artifact.
-# Supported release manifest
+## Build and publication controls
 
-The Phase 9 supported bundle uses `scripts/generate_supported_manifest.py`,
-not the legacy local-development manifest, as its immutable bill of materials.
-Release automation supplies an image environment containing one registry digest
-for each supported service and a protected `SOURCE_DATE_EPOCH`:
+The workflow accepts only preview-formatted versions. It rebuilds every project
+image from the exact source commits in
+`releases/preview-source-correspondence.v1.json`, replaces mutable common-wheel
+inputs with an immutable digest, and publishes only linux/amd64 images.
 
-```bash
-SOURCE_DATE_EPOCH=1784764800 \
-  ./scripts/generate_supported_manifest.py \
-  --version v0.1.0-rc.1 \
-  --images-env release-assets/supported-images.env \
-  --out release-assets/manifest.json
-```
+Each image receives BuildKit SBOM and provenance attestations, a keyless Cosign
+signature, and a critical-severity vulnerability scan. The assembly job rejects
+missing image evidence, records effective Dockerfile hashes, produces the signed
+bundle, and verifies the complete release set before publication.
 
-Publication rejects missing, mutable, or example zero digests. The manifest
-records the source commit, normalized build time, supported Compose hash, image
-digests, host/package/resource contract, schema/configuration/backup versions,
-model-profile hash, and declared licenses. Repeating the command from the same
-source and inputs produces byte-identical output.
+After publication, a separate job downloads the public GitHub Release assets,
+verifies checksums and signatures, validates the bundle and provenance, runs an
+installation transaction in a temporary prefix, and confirms incomplete or
+tampered mirrors are rejected.
+
+The previous tag-triggered alpha workflow was removed. Its WSL, VM, and ISO
+assets are historical evaluator artifacts and are not part of the current
+appliance download contract.
+
+## Manual release
+
+Dispatch `Unsupported preview release` from the `main` branch with a version
+such as `v0.6.0-preview.1`. The repository secret
+`PREVIEW_BUNDLE_SIGNING_KEY_PEM` must contain the private key matching
+`releases/trust/preview-bundle-ed25519.pem`.
+
+Preview signing trust is intentionally separate from a future production
+release key. A supported release must also satisfy the tracked hardware
+validation gates before the support record can change from
+`unsupported-preview`.
