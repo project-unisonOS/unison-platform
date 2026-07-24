@@ -87,7 +87,7 @@ jobs:
           """.replace("__CURRENT_BASE__", current_base)
           if mutable in text:
               text = text.replace(mutable, source_build.rstrip())
-              dockerfile.write_text(text)
+          dockerfile.write_text(text)
           PY
           echo "sha256=$(sha256sum source/Dockerfile | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
       - name: Log in to GHCR
