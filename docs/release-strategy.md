@@ -1,66 +1,41 @@
 ---
-title: Platform Image Release Strategy
+title: Platform release strategy
 ---
 
-# Platform Image Release Strategy
+# Platform release strategy
 
-UnisonOS platform artifacts are delivered as **GitHub Release assets** in the `project-unisonOS/unison-platform` repository.
+UnisonOS platform downloads are delivered as immutable GitHub Release assets
+in `project-unisonOS/unison-platform`.
 
-Important Milestone 1 framing:
-- the supported installation route is Ubuntu 24.04 native on x86_64
-- WSL2, Linux VM, and bare-metal image artifacts are evaluator channels unless explicitly promoted
-- release assets and release notes should foreground the native route first
+## Current channel
 
-## Goals
+The current channel uses tags shaped like `vX.Y.Z-preview.N`. Every release is
+marked as a prerelease and an unsupported, pre-production software preview.
+It is suitable for evaluating the software delivery and installer contracts,
+but not for production data or claims of hardware compatibility.
 
-- Make it obvious what to download.
-- Make the supported native install path unmistakable.
-- Keep versioned releases immutable and auditable.
-- Provide “latest per target” entry points for developers and evaluators.
+The primary download is the signed x86_64 appliance bundle. Its manifest pins
+every runtime image by digest. Checksums, signatures, SBOM, provenance,
+source correspondence, and a machine-readable support record are published
+beside it.
 
-## Tagging model
+Release tags and assets are immutable. If a candidate is defective, publish a
+new preview number. Do not move a tag or replace an asset.
 
-### Immutable, versioned tags (current)
+## Promotion to a supported channel
 
-For `v0.5.0-alpha.N`, use one immutable release tag.
+A future supported release requires all software gates plus the deferred
+physical-hardware matrix. At minimum that includes clean installation, restart,
+power-loss recovery, update activation, rollback, backup and restore, peripheral
+behavior, thermal behavior, and documented hardware compatibility.
 
-That release should always support the canonical native install path first. Evaluator artifacts may also be attached when available.
+Until those checks pass, documentation and release metadata must continue to
+say `unsupported-preview`. Historical `v0.5.0-alpha.1` WSL, VM, and ISO files
+remain evaluator artifacts only and are not current appliance downloads.
 
-Example current alpha shape:
+## Download authority
 
-- `v0.5.0-alpha.N` → native install docs/assets first, optionally followed by WSL2 + Linux VM + bare metal + manifest + checksums
-
-These tags are **immutable** and should never be moved.
-
-### Rolling “latest per target” tags
-
-Maintain one moving tag per target:
-
-- `latest-wsl`
-- `latest-linux-vm`
-- `latest-bare-metal`
-
-These tags are **mutable** and should be force-updated to point at the newest corresponding versioned tag.
-
-Example (manual update):
-
-```bash
-git fetch --tags origin
-git tag -fa latest-wsl vX.Y.Z-wsl2 -m "Latest WSL2 developer image"
-git push -f origin latest-wsl
-```
-
-## Release expectations (alpha)
-
-Each platform release should:
-
-- foreground the canonical Ubuntu native install path
-- publish evaluator artifacts only as secondary channels when available
-- publish assets with canonical, self-describing names:
-  - `unisonos-wsl2-v0.5.0-alpha.N.tar.gz` (or `.zip`)
-  - `unisonos-linux-vm-v0.5.0-alpha.N.qcow2` (and/or `.vmdk`)
-  - `unisonos-baremetal-v0.5.0-alpha.N.iso.part00` (and subsequent `part*`, plus `...REASSEMBLE.txt`)
-  - `unisonos-manifest-v0.5.0-alpha.N.json`
-  - `SHA256SUMS-v0.5.0-alpha.N.txt`
-- Link to the canonical install pages for the supported native route first
-- Link to evaluator install pages second when those artifacts are present
+The release page and its `RELEASE_NOTES.md` asset define the files for that
+version. Website pages should link to the current release page or to an exact
+asset in that release. Rolling target tags and guessed filenames are not part
+of the current contract.

@@ -1,0 +1,252 @@
+name: Unsupported preview release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Preview version (vX.Y.Z-preview.N)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: preview-release-${{ inputs.version }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.version.outputs.value }}
+    steps:
+      - name: Validate release request
+        id: version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          if ! [[ "$VERSION" =~ ^v[0-9]+\.[0-9]+\.[0-9]+-preview\.[0-9]+$ ]]; then
+            echo "Version must match vX.Y.Z-preview.N" >&2
+            exit 1
+          fi
+          echo "value=$VERSION" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: validate
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { repository: unison-auth, commit: 02c0e26bec35a3dc4797de7a8da726ee70d271a7 }
+          - { repository: unison-context, commit: 9a339f6c17248f3e17f3b2fc1c4e5195504f2447 }
+          - { repository: unison-policy, commit: 83eb4e8fd5a60148cd7d28a85cb64f6e6e1335cb }
+          - { repository: unison-orchestrator, commit: 16d5b491b2cb57df167c5d75f92863c5ca679bb0 }
+          - { repository: unison-intent-graph, commit: a19044b15c34b652c6aa273c56a80357eb5652b9 }
+          - { repository: unison-context-graph, commit: 092da683f6cd8b10905a8cb5cd21ca9c8566b944 }
+          - { repository: unison-experience-renderer, commit: 5dd4b3c9b0074982a35af837aa08a28dd6f395df }
+          - { repository: unison-io-speech, commit: d942222aa5329dbf29da8bb88c1e33c296e2856c }
+          - { repository: unison-inference, commit: b65a238cfd7a9b067a916da53609ef6760c9faed }
+          - { repository: unison-storage, commit: 9fb770faeca085433e266bd12907d1b278a270f5 }
+    steps:
+      - name: Checkout image source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          repository: project-unisonOS/${{ matrix.repository }}
+          ref: ${{ matrix.commit }}
+          path: source
+          persist-credentials: false
+      - name: Pin common build input and record recipe
+        id: recipe
+        env:
+          COMMON_IMAGE: ghcr.io/project-unisonos/unison-common-wheel@sha256:589ac7c47eee3598a511c3ee2014c23a512700f1ae4fd7abd69adb072c1f4ce6
+        run: |
+          sed -i "s|ghcr.io/project-unisonos/unison-common-wheel:latest|$COMMON_IMAGE|g" source/Dockerfile
+          echo "sha256=$(sha256sum source/Dockerfile | cut -d' ' -f1)" >> "$GITHUB_OUTPUT"
+      - name: Log in to GHCR
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f
+      - name: Build and push immutable preview image
+        id: build
+        uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8
+        with:
+          context: source
+          file: source/Dockerfile
+          platforms: linux/amd64
+          push: true
+          sbom: true
+          provenance: mode=max
+          tags: ghcr.io/project-unisonos/${{ matrix.repository }}:${{ needs.validate.outputs.version }}
+          build-args: |
+            UNISON_COMMON_REF=56a1f535e3a6723d14d0ca09e0952aa54bcfb63d
+            GIT_SHA=${{ matrix.commit }}
+            BUILD_TIME=1970-01-01T00:00:00Z
+          labels: |
+            org.opencontainers.image.source=https://github.com/project-unisonOS/${{ matrix.repository }}
+            org.opencontainers.image.revision=${{ matrix.commit }}
+            org.opencontainers.image.version=${{ needs.validate.outputs.version }}
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb
+      - name: Sign and verify image identity
+        env:
+          IMAGE: ghcr.io/project-unisonos/${{ matrix.repository }}@${{ steps.build.outputs.digest }}
+        run: |
+          cosign sign --yes "$IMAGE"
+          cosign verify "$IMAGE" \
+            --certificate-identity-regexp='^https://github.com/project-unisonOS/unison-platform/.github/workflows/preview-release.yml@refs/(heads/main|tags/.+)$' \
+            --certificate-oidc-issuer=https://token.actions.githubusercontent.com
+      - name: Scan image
+        id: scan
+        uses: anchore/scan-action@1638637db639e0ade3258b51db49a9a137574c3e
+        with:
+          image: ghcr.io/project-unisonos/${{ matrix.repository }}@${{ steps.build.outputs.digest }}
+          fail-build: true
+          severity-cutoff: critical
+          output-format: json
+          output-file: scan.json
+      - name: Record immutable image metadata
+        env:
+          REPOSITORY: ${{ matrix.repository }}
+          SOURCE_COMMIT: ${{ matrix.commit }}
+          IMAGE_DIGEST: ${{ steps.build.outputs.digest }}
+          RECIPE_SHA: ${{ steps.recipe.outputs.sha256 }}
+        run: |
+          python3 - <<'PY'
+          import json, os
+          record = {
+              "repository": os.environ["REPOSITORY"],
+              "source_commit": os.environ["SOURCE_COMMIT"],
+              "digest": os.environ["IMAGE_DIGEST"],
+              "effective_dockerfile_sha256": os.environ["RECIPE_SHA"],
+          }
+          with open(f'{record["repository"]}.json', "w") as handle:
+              json.dump(record, handle, indent=2, sort_keys=True)
+              handle.write("\n")
+          PY
+      - name: Upload image evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: image-${{ matrix.repository }}
+          path: |
+            ${{ matrix.repository }}.json
+            scan.json
+          if-no-files-found: error
+
+  publish:
+    needs: [validate, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      id-token: write
+    steps:
+      - name: Checkout platform source
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Download image evidence
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          pattern: image-*
+          path: image-evidence
+      - name: Collect metadata
+        run: |
+          mkdir image-metadata
+          find image-evidence -name 'unison-*.json' -exec cp {} image-metadata/ \;
+      - name: Materialize preview signing key
+        env:
+          PREVIEW_KEY: ${{ secrets.PREVIEW_BUNDLE_SIGNING_KEY_PEM }}
+        run: |
+          install -m 600 /dev/null "$RUNNER_TEMP/preview-key.pem"
+          printf '%s\n' "$PREVIEW_KEY" > "$RUNNER_TEMP/preview-key.pem"
+      - name: Assemble signed release
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          python3 scripts/assemble_preview_release.py \
+            --version "$VERSION" \
+            --metadata-dir image-metadata \
+            --signing-key "$RUNNER_TEMP/preview-key.pem" \
+            --out-dir release-assets
+          python3 scripts/verify_preview_release.py \
+            --version "$VERSION" --assets-dir release-assets
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@3454372f43399081ed03b604cb2d021dabca52bb
+      - name: Sign release evidence
+        run: |
+          find release-assets -maxdepth 1 -type f \
+            \( -name '*.json' -o -name SHA256SUMS \) -print0 |
+          while IFS= read -r -d '' asset; do
+            cosign sign-blob --yes --bundle="${asset}.sigstore.json" "$asset"
+          done
+      - name: Publish unsupported prerelease
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          gh release create "$VERSION" release-assets/* \
+            --repo "$GITHUB_REPOSITORY" \
+            --target "$GITHUB_SHA" \
+            --prerelease \
+            --title "UnisonOS $VERSION (unsupported preview)" \
+            --notes-file release-assets/RELEASE_NOTES.md
+
+  verify-public:
+    needs: [validate, publish]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout verification code
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Download public release assets
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          mkdir public-assets
+          gh release download "$VERSION" --repo "$GITHUB_REPOSITORY" --dir public-assets
+      - name: Verify public mirror and install transaction
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          python3 scripts/verify_preview_release.py \
+            --version "$VERSION" --assets-dir public-assets
+          bootstrap=(python3 installer/bootstrap.py \
+            --bundle "public-assets/unisonos-${VERSION}-x86_64.tar" \
+            --trusted-public-key public-assets/unisonos-preview-bundle-ed25519.pem \
+            --prefix "$RUNNER_TEMP/unison" \
+            --data-dir "$RUNNER_TEMP/unison-data")
+          plan_sha="$("${bootstrap[@]}" verify | jq -r .plan_sha256)"
+          "${bootstrap[@]}" install --accept-plan-sha256 "$plan_sha"
+      - name: Reject incomplete and tampered mirrors
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+        run: |
+          cp -a public-assets incomplete-assets
+          rm "incomplete-assets/unisonos-${VERSION}-manifest.json"
+          if python3 scripts/verify_preview_release.py \
+            --version "$VERSION" --assets-dir incomplete-assets; then
+            echo "Incomplete mirror was accepted" >&2
+            exit 1
+          fi
+          cp -a public-assets tampered-assets
+          printf '\ntampered\n' >> "tampered-assets/unisonos-${VERSION}-sources.json"
+          if python3 scripts/verify_preview_release.py \
+            --version "$VERSION" --assets-dir tampered-assets; then
+            echo "Tampered mirror was accepted" >&2
+            exit 1
+          fi
