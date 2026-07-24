@@ -33,6 +33,25 @@ and immutable image inventory. Uninstall removes the receipt and software while
 preserving personal data unless factory reset receives its separate exact
 destruction confirmation.
 
+## Verified update transaction
+
+`installer/update_transaction.py` accepts only a
+`unison.updates.verified-target.v1` authorization whose channel, target
+version, release version, hardware profile, artifact length, and artifact
+SHA-256 match the independently verified signed release bundle.
+
+Before activation it verifies available capacity, copies and verifies the
+personal-data checkpoint, materializes the complete target into a versioned
+staging path, and journals the transaction. Activation atomically changes the
+current release pointer. A bounded health callback must pass before the new
+receipt and version are promoted.
+
+Failed health, migration, or post-activation interruption restores the
+last-known-good release, receipt, and checkpointed data automatically. A
+promoted update retains its checkpoint for explicit owner rollback. An
+interruption before activation leaves the old release active and permits the
+same verified target to resume.
+
 Installer scripts live here for different host targets:
 - **install-native.sh**: legacy repository-oriented native Ubuntu evaluation path.
 - **install-docker.sh**: host already has Docker; pulls and configures platform Compose.
