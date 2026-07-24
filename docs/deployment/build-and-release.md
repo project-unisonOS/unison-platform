@@ -30,7 +30,8 @@ older alpha releases.
 The workflow accepts only preview-formatted versions. It rebuilds every project
 image from the exact source commits in
 `releases/preview-source-correspondence.v1.json`, builds the common wheel from
-its exact source commit, and publishes only linux/amd64 images.
+its exact source commit, applies available base OS security upgrades, and
+publishes only linux/amd64 images.
 
 Each image receives BuildKit SBOM and provenance attestations, a keyless Cosign
 signature, and a vulnerability scan. The preview gate rejects any critical

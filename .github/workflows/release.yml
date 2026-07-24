@@ -72,6 +72,11 @@ jobs:
           old_base = "python:3.12-slim@sha256:fdab368dc2e04fab3180d04508b41732756cc442586f708021560ee1341f3d29"
           current_base = "python:3.12-slim@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de"
           text = text.replace(old_base, current_base)
+          text = text.replace(
+              "RUN apt-get update && apt-get install",
+              "RUN apt-get update && apt-get upgrade -y --no-install-recommends \\\n"
+              "    && apt-get install",
+          )
           mutable = "FROM ghcr.io/project-unisonos/unison-common-wheel:latest AS common_wheel"
           source_build = """FROM __CURRENT_BASE__ AS common_wheel
           ARG UNISON_COMMON_REF
