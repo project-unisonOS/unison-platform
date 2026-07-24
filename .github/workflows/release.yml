@@ -104,7 +104,7 @@ jobs:
         run: |
           cosign sign --yes "$IMAGE"
           cosign verify "$IMAGE" \
-            --certificate-identity-regexp='^https://github.com/project-unisonOS/unison-platform/.github/workflows/preview-release.yml@refs/(heads/main|tags/.+)$' \
+            --certificate-identity-regexp='^https://github.com/project-unisonOS/unison-platform/.github/workflows/release.yml@refs/(heads/main|tags/.+)$' \
             --certificate-oidc-issuer=https://token.actions.githubusercontent.com
       - name: Scan image
         id: scan

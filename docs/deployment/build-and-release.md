@@ -1,7 +1,7 @@
 # Platform builds and preview releases
 
 The canonical downloadable appliance artifact is the signed x86_64 bundle
-published by `.github/workflows/preview-release.yml`. The initial release
+published by `.github/workflows/release.yml`. The initial release
 channel is explicitly an unsupported software preview. Physical appliance
 compatibility, install, update, rollback, and recovery validation remain
 pending.
