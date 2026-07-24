@@ -11,11 +11,13 @@ on:
       - "installer/bootstrap.py"
       - "installer/release_bundle.py"
       - "installer/transaction.py"
+      - "installer/update_transaction.py"
       - "scripts/assemble_supported_bundle.py"
       - "scripts/generate_supported_manifest.py"
       - "scripts/test_supported_bundle.py"
       - "scripts/test_supported_manifest.py"
       - "scripts/test_installer_transactions.py"
+      - "scripts/test_update_transaction.py"
       - "scripts/validate-supported-runtime.py"
       - ".github/workflows/supported-runtime.yml"
   pull_request:
@@ -28,11 +30,13 @@ on:
       - "installer/bootstrap.py"
       - "installer/release_bundle.py"
       - "installer/transaction.py"
+      - "installer/update_transaction.py"
       - "scripts/assemble_supported_bundle.py"
       - "scripts/generate_supported_manifest.py"
       - "scripts/test_supported_bundle.py"
       - "scripts/test_supported_manifest.py"
       - "scripts/test_installer_transactions.py"
+      - "scripts/test_update_transaction.py"
       - "scripts/validate-supported-runtime.py"
       - ".github/workflows/supported-runtime.yml"
 
@@ -55,3 +59,5 @@ jobs:
         run: ./scripts/test_installer_transactions.py
       - name: Verify signed release bundle and bootstrap contract
         run: ./scripts/test_supported_bundle.py
+      - name: Simulate verified update activation and rollback
+        run: ./scripts/test_update_transaction.py
