@@ -29,3 +29,5 @@ jobs:
         run: ./scripts/test_supported_manifest.py
       - name: Simulate installer preflight matrix
         run: ./scripts/test_installer_preflight.py
+      - name: Simulate installer transactions and interruption
+        run: ./scripts/test_installer_transactions.py
