@@ -1,7 +1,40 @@
 # Installers
 
+## Supported native release bootstrap
+
+The Phase 9 candidate path uses `installer/bootstrap.py`. It verifies the
+canonical bundle index with the separately trusted Ed25519 public key, rejects
+undeclared or changed content, reconciles the release manifest with Compose,
+images, host requirements, licenses, and the model profile, then prints an
+exact system-change plan. Verification does not require elevated privileges.
+
+Installation requires the SHA-256 of that exact plan:
+
+```bash
+./installer/bootstrap.py \
+  --bundle unisonos-VERSION-x86_64.tar \
+  --trusted-public-key unisonos-release.pem \
+  --prefix /opt/unison \
+  --data-dir /var/lib/unison \
+  verify
+
+sudo ./installer/bootstrap.py \
+  --bundle unisonos-VERSION-x86_64.tar \
+  --trusted-public-key unisonos-release.pem \
+  --prefix /opt/unison \
+  --data-dir /var/lib/unison \
+  install \
+  --accept-plan-sha256 PLAN_SHA256
+```
+
+Successful installation writes `/opt/unison/install-receipt.json`, which binds
+the installed tree to the signed bundle index, release manifest, source commit,
+and immutable image inventory. Uninstall removes the receipt and software while
+preserving personal data unless factory reset receives its separate exact
+destruction confirmation.
+
 Installer scripts live here for different host targets:
-- **install-native.sh**: native Ubuntu install for the supported Milestone 1 target.
+- **install-native.sh**: legacy repository-oriented native Ubuntu evaluation path.
 - **install-docker.sh**: host already has Docker; pulls and configures platform Compose.
 - **install-wsl.sh**: WSL-specific bootstrap script (Windows + Ubuntu WSL).
 

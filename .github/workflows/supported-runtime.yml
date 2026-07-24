@@ -5,12 +5,34 @@ on:
     paths:
       - "compose/compose.supported.yaml"
       - "releases/supported-images.example.env"
+      - "releases/supported-host-requirements.json"
+      - "releases/supported-licenses.json"
+      - "model-packs/alpha/default.json"
+      - "installer/bootstrap.py"
+      - "installer/release_bundle.py"
+      - "installer/transaction.py"
+      - "scripts/assemble_supported_bundle.py"
+      - "scripts/generate_supported_manifest.py"
+      - "scripts/test_supported_bundle.py"
+      - "scripts/test_supported_manifest.py"
+      - "scripts/test_installer_transactions.py"
       - "scripts/validate-supported-runtime.py"
       - ".github/workflows/supported-runtime.yml"
   pull_request:
     paths:
       - "compose/compose.supported.yaml"
       - "releases/supported-images.example.env"
+      - "releases/supported-host-requirements.json"
+      - "releases/supported-licenses.json"
+      - "model-packs/alpha/default.json"
+      - "installer/bootstrap.py"
+      - "installer/release_bundle.py"
+      - "installer/transaction.py"
+      - "scripts/assemble_supported_bundle.py"
+      - "scripts/generate_supported_manifest.py"
+      - "scripts/test_supported_bundle.py"
+      - "scripts/test_supported_manifest.py"
+      - "scripts/test_installer_transactions.py"
       - "scripts/validate-supported-runtime.py"
       - ".github/workflows/supported-runtime.yml"
 
@@ -31,3 +53,5 @@ jobs:
         run: ./scripts/test_installer_preflight.py
       - name: Simulate installer transactions and interruption
         run: ./scripts/test_installer_transactions.py
+      - name: Verify signed release bundle and bootstrap contract
+        run: ./scripts/test_supported_bundle.py
