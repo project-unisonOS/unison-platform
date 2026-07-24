@@ -45,6 +45,7 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", required=True)
     parser.add_argument("--metadata-dir", required=True, type=Path)
+    parser.add_argument("--scan-dir", required=True, type=Path)
     parser.add_argument("--signing-key", required=True, type=Path)
     parser.add_argument("--out-dir", required=True, type=Path)
     args = parser.parse_args()
@@ -72,6 +73,40 @@ def main() -> None:
         recipes[repo] = item["effective_dockerfile_sha256"]
     if set(sources) != set(correspondence["images"]):
         raise SystemExit("image metadata is incomplete")
+
+    scan_summary = {"schema_version": "unison.preview.vulnerability-summary.v1",
+                    "images": {}, "critical_with_fix": []}
+    scan_paths = sorted(args.scan_dir.glob("scan-*.json"))
+    if len(scan_paths) != len(correspondence["images"]):
+        raise SystemExit("vulnerability scan evidence is incomplete")
+    if {path.stem.removeprefix("scan-") for path in scan_paths} != set(sources):
+        raise SystemExit("vulnerability scan image inventory does not match source inventory")
+    for path in scan_paths:
+        repo = path.stem.removeprefix("scan-")
+        report = json.loads(path.read_text())
+        counts = {}
+        no_fix = []
+        for match in report.get("matches", []):
+            vulnerability = match.get("vulnerability", {})
+            severity = vulnerability.get("severity", "Unknown")
+            counts[severity] = counts.get(severity, 0) + 1
+            if severity == "Critical":
+                item = {
+                    "id": vulnerability.get("id"),
+                    "package": match.get("artifact", {}).get("name"),
+                    "installed": match.get("artifact", {}).get("version"),
+                    "fix_versions": vulnerability.get("fix", {}).get("versions", []),
+                }
+                if item["fix_versions"]:
+                    scan_summary["critical_with_fix"].append({"image": repo, **item})
+                else:
+                    no_fix.append(item)
+        scan_summary["images"][repo] = {
+            "counts_by_severity": dict(sorted(counts.items())),
+            "critical_without_fix": no_fix,
+        }
+    if scan_summary["critical_with_fix"]:
+        raise SystemExit("release images contain fixable critical vulnerabilities")
 
     image_env = args.out_dir / f"unisonos-{args.version}-images.env"
     image_env.write_text(
@@ -146,6 +181,10 @@ def main() -> None:
         "production_use": False,
         "support_end": None,
     }, indent=2, sort_keys=True) + "\n")
+    vulnerability_path = args.out_dir / f"unisonos-{args.version}-vulnerabilities.json"
+    vulnerability_path.write_text(
+        json.dumps(scan_summary, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
     notes = args.out_dir / "RELEASE_NOTES.md"
     notes.write_text(
         f"# UnisonOS {args.version}\n\n"

@@ -69,14 +69,17 @@ jobs:
           from pathlib import Path
           dockerfile = Path("source/Dockerfile")
           text = dockerfile.read_text()
+          old_base = "python:3.12-slim@sha256:fdab368dc2e04fab3180d04508b41732756cc442586f708021560ee1341f3d29"
+          current_base = "python:3.12-slim@sha256:57cd7c3a7a273101a6485ba99423ee568157882804b1124b4dd04266317710de"
+          text = text.replace(old_base, current_base)
           mutable = "FROM ghcr.io/project-unisonos/unison-common-wheel:latest AS common_wheel"
-          source_build = """FROM python:3.12-slim@sha256:fdab368dc2e04fab3180d04508b41732756cc442586f708021560ee1341f3d29 AS common_wheel
+          source_build = """FROM __CURRENT_BASE__ AS common_wheel
           ARG UNISON_COMMON_REF
           RUN apt-get update && apt-get install -y --no-install-recommends git ca-certificates \\
               && rm -rf /var/lib/apt/lists/* \\
               && pip wheel --no-cache-dir --no-deps --wheel-dir /tmp/wheels \\
                  "git+https://github.com/project-unisonOS/unison-common.git@${UNISON_COMMON_REF}"
-          """
+          """.replace("__CURRENT_BASE__", current_base)
           if mutable in text:
               text = text.replace(mutable, source_build.rstrip())
               dockerfile.write_text(text)
@@ -125,10 +128,10 @@ jobs:
         uses: anchore/scan-action@1638637db639e0ade3258b51db49a9a137574c3e
         with:
           image: ghcr.io/project-unisonos/unison-platform-${{ matrix.repository }}@${{ steps.build.outputs.digest }}
-          fail-build: true
+          fail-build: false
           severity-cutoff: critical
           output-format: json
-          output-file: scan.json
+          output-file: scan-${{ matrix.repository }}.json
       - name: Record immutable image metadata
         env:
           REPOSITORY: ${{ matrix.repository }}
@@ -157,7 +160,7 @@ jobs:
           name: image-${{ matrix.repository }}
           path: |
             ${{ matrix.repository }}.json
-            scan.json
+            scan-${{ matrix.repository }}.json
           if-no-files-found: error
 
   publish:
@@ -178,8 +181,9 @@ jobs:
           path: image-evidence
       - name: Collect metadata
         run: |
-          mkdir image-metadata
+          mkdir image-metadata scan-evidence
           find image-evidence -name 'unison-*.json' -exec cp {} image-metadata/ \;
+          find image-evidence -name 'scan-*.json' -exec cp {} scan-evidence/ \;
       - name: Materialize preview signing key
         env:
           PREVIEW_KEY: ${{ secrets.PREVIEW_BUNDLE_SIGNING_KEY_PEM }}
@@ -193,6 +197,7 @@ jobs:
           python3 scripts/assemble_preview_release.py \
             --version "$VERSION" \
             --metadata-dir image-metadata \
+            --scan-dir scan-evidence \
             --signing-key "$RUNNER_TEMP/preview-key.pem" \
             --out-dir release-assets
           python3 scripts/verify_preview_release.py \

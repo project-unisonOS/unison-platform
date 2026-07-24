@@ -32,6 +32,7 @@ def main() -> None:
         f"unisonos-{args.version}-provenance.json",
         f"unisonos-{args.version}-sources.json",
         f"unisonos-{args.version}-support.json",
+        f"unisonos-{args.version}-vulnerabilities.json",
         f"unisonos-{args.version}.spdx.json",
         f"unisonos-{args.version}-x86_64.tar",
     }
@@ -59,6 +60,11 @@ def main() -> None:
     policy = json.loads((root / f"unisonos-{args.version}-support.json").read_text())
     if policy["status"] != "unsupported-preview" or policy["production_use"]:
         raise SystemExit("preview support policy is unsafe")
+    vulnerabilities = json.loads(
+        (root / f"unisonos-{args.version}-vulnerabilities.json").read_text()
+    )
+    if vulnerabilities["critical_with_fix"]:
+        raise SystemExit("release has fixable critical vulnerabilities")
     verify_bundle(bundle, root / "unisonos-preview-bundle-ed25519.pem")
     print(f"verified complete public asset set for {args.version}")
 
