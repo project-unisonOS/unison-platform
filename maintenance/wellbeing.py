@@ -39,13 +39,39 @@ def wellbeing_projection(result: dict, *, observed_at: str) -> dict:
         ],
         "recommendations": [
             {
+                "recommendation_id": item.get("recommendation_id", ""),
                 "title": item["title"],
                 "explanation": " ".join(item["rationale"]),
                 "authority": item["authority"],
                 "requires_confirmation": item["requires_confirmation"],
+                "alternatives": item.get("alternatives", []),
+                "risk": item.get("risk", "unknown"),
             }
             for item in recommendations
         ],
+        "maintenance_history": [
+            {
+                "receipt_id": item.get("receipt_id", ""),
+                "result": item.get("result", "unknown"),
+                "completed_at": item.get("completed_at"),
+                "checkpoint_id": item.get("checkpoint_id"),
+            }
+            for item in result.get("receipts", [])
+        ],
+        "community_proposals": [
+            {
+                "subject": item.get("subject", ""),
+                "statement": item.get("statement", ""),
+                "source_count": item.get("source_count", 0),
+                "authority": "test-proposal-only",
+            }
+            for item in result.get("community_proposals", [])
+        ],
         "privacy": {"personal_content_collected": False},
-        "autonomy": {"default": "recommend", "execution_available": False},
+        "autonomy": {
+            "default": "recommend",
+            "execution_available": bool(result.get("active_grant")),
+            "grant_id": result.get("active_grant", {}).get("grant_id"),
+            "revocable": True,
+        },
     }

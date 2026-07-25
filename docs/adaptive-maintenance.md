@@ -1,7 +1,7 @@
 # Adaptive maintenance
 
-The AM-0 through AM-3 implementation provides a dependency-free,
-non-privileged maintenance analysis boundary.
+The adaptive-maintenance implementation provides dependency-free analysis,
+discovery, calibration, and narrowly bounded execution boundaries.
 
 It can:
 
@@ -15,16 +15,26 @@ It can:
 - prefer software and configuration alternatives before hardware purchases; and
 - write an allowlisted System wellbeing projection for the renderer.
 
-It cannot install, restart, patch, purchase, or change the appliance. Execution
-belongs to the separately privileged Appliance Lifecycle boundary and is planned
-for AM-4. The default policy is Recommend. Authoritative evidence must arrive
-with verified source authentication; the development registry itself must be
-signed before a product profile can consume it.
+The default policy is Recommend. AM-4 execution is available only through the
+separately privileged Appliance Lifecycle boundary and an exact, revocable
+grant. It enforces a maintenance window, budgets, signed artifacts, checkpoints,
+health gates, receipts, circuit breakers, and rollback. Community content is
+restricted to test proposals and can never authorize an action.
+
+Full-stack eligibility covers OS packages, containers, drivers, model runtimes,
+models, capabilities, and data/configuration. Firmware remains blocked until
+vendor recovery passes on the exact physical hardware. Pilot promotion also
+remains blocked until the physical matrix, real opt-in pilot, and human
+promotion gates pass.
+
+See [adaptive-maintenance-operations.md](adaptive-maintenance-operations.md)
+for the support boundary and incident procedures.
 
 Run the deterministic acceptance suite:
 
 ```bash
 python3 scripts/test_adaptive_maintenance.py
+python3 scripts/test_adaptive_maintenance_operations.py
 ```
 
 Inspect the current host without collecting personal content:

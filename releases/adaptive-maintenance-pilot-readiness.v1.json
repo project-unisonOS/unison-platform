@@ -1,0 +1,16 @@
+{
+  "schema_version": "1",
+  "ci_verifiable": {
+    "privacy_review": "passed",
+    "security_review": "passed",
+    "accessibility_review": "passed",
+    "incident_runbook": "passed",
+    "source_governance_review": "passed",
+    "support_boundaries": "passed"
+  },
+  "physical_matrix": "pending",
+  "opt_in_pilot": "pending",
+  "human_promotion": "pending",
+  "automatic_action_classes_promoted": [],
+  "reason": "Named physical systems and pilot participants are not currently available."
+}
