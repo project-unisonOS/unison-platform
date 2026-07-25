@@ -23,6 +23,10 @@ on:
       - "scripts/test_installer_transactions.py"
       - "scripts/test_update_transaction.py"
       - "scripts/validate-supported-runtime.py"
+      - "maintenance/**"
+      - "releases/adaptive-maintenance-*.json"
+      - "scripts/test_adaptive_maintenance.py"
+      - "scripts/unison-maintenance.py"
       - ".github/workflows/supported-runtime.yml"
   pull_request:
     paths:
@@ -46,6 +50,10 @@ on:
       - "scripts/test_installer_transactions.py"
       - "scripts/test_update_transaction.py"
       - "scripts/validate-supported-runtime.py"
+      - "maintenance/**"
+      - "releases/adaptive-maintenance-*.json"
+      - "scripts/test_adaptive_maintenance.py"
+      - "scripts/unison-maintenance.py"
       - ".github/workflows/supported-runtime.yml"
 
 permissions:
@@ -69,3 +77,5 @@ jobs:
         run: ./scripts/test_supported_bundle.py
       - name: Simulate verified update activation and rollback
         run: ./scripts/test_update_transaction.py
+      - name: Validate adaptive maintenance analysis boundaries
+        run: ./scripts/test_adaptive_maintenance.py
