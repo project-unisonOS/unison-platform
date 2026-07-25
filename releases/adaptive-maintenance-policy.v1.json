@@ -1,0 +1,39 @@
+{
+  "schema_version": "unison.adaptive-maintenance-policy.v1",
+  "policy_id": "unisonos-default-recommend-v1",
+  "default_autonomy": "recommend",
+  "action_classes": {
+    "read-only-diagnosis": "maintain",
+    "reversible-housekeeping": "recommend",
+    "application-update": "prepare",
+    "model-update": "prepare",
+    "capability-update": "prepare",
+    "os-security-update": "prepare",
+    "service-restart": "recommend",
+    "urgent-containment": "recommend",
+    "kernel-driver-firmware": "recommend",
+    "schema-migration": "recommend",
+    "destructive-cleanup": "recommend",
+    "hardware-change": "recommend"
+  },
+  "emergency_protect": false,
+  "maximum_downtime_seconds": 300,
+  "maximum_download_bytes": 10737418240,
+  "maintenance_windows": [],
+  "execution_rules": {
+    "internet_content_can_authorize": false,
+    "independent_lifecycle_verification_required": true,
+    "checkpoint_required_for_mutation": true,
+    "health_gate_required_for_mutation": true,
+    "rollback_required_for_automatic_mutation": true,
+    "hardware_purchase_execution_allowed": false
+  },
+  "operational_data": {
+    "personal_content_allowed": false,
+    "raw_identifiers_exported": false,
+    "device_summary_visible_to_household_admin": true,
+    "per_person_activity_visible_to_household_admin": false,
+    "default_retention_days": 30
+  },
+  "expires_at": null
+}

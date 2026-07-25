@@ -1,0 +1,17 @@
+{
+  "schema_version": "unison.adaptive-maintenance-envelopes.v1",
+  "status": "software-simulation-only",
+  "metrics": {
+    "cpu.saturation": {"warning": 0.75, "critical": 0.9, "unit": "ratio"},
+    "memory.pressure": {"warning": 0.7, "critical": 0.88, "unit": "ratio"},
+    "storage.used": {"warning": 0.8, "critical": 0.92, "unit": "ratio"},
+    "service.error_rate": {"warning": 0.02, "critical": 0.1, "unit": "ratio"},
+    "backup.age_hours": {"warning": 24, "critical": 72, "unit": "hours"},
+    "model.first_token_ms": {"warning": 2000, "critical": 5000, "unit": "milliseconds"}
+  },
+  "limitations": [
+    "Thresholds are initial software-contract values.",
+    "Physical reference hardware calibration remains required.",
+    "No threshold authorizes a privileged action."
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "registry_version": 1,
+  "status": "development-reviewed",
+  "sources": [
+    {
+      "source_id": "unison-release",
+      "base_url": "https://github.com/project-unisonOS",
+      "trust_tier": "authoritative",
+      "allowed_paths": ["/unison-platform/releases", "/unison-platform/security/advisories"],
+      "parser": "github-release-advisory-v1",
+      "rate_limit_per_hour": 12,
+      "enabled": true
+    },
+    {
+      "source_id": "ubuntu-security",
+      "base_url": "https://ubuntu.com/security",
+      "trust_tier": "authoritative",
+      "allowed_paths": ["/notices", "/oval"],
+      "parser": "ubuntu-usn-oval-v1",
+      "rate_limit_per_hour": 6,
+      "enabled": true
+    },
+    {
+      "source_id": "github-advisory",
+      "base_url": "https://api.github.com",
+      "trust_tier": "authoritative",
+      "allowed_paths": ["/advisories"],
+      "parser": "github-reviewed-advisory-v1",
+      "rate_limit_per_hour": 12,
+      "enabled": true
+    },
+    {
+      "source_id": "community-discovery",
+      "base_url": "https://news.ycombinator.com",
+      "trust_tier": "discovery-only",
+      "allowed_paths": ["/item"],
+      "parser": "community-claim-v1",
+      "rate_limit_per_hour": 6,
+      "enabled": true
+    }
+  ],
+  "signature": {
+    "required_for_product_profile": true,
+    "development_registry_unsigned": true
+  }
+}
