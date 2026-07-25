@@ -1,0 +1,11 @@
+[Unit]
+Description=Schedule Unison adaptive maintenance
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=1h
+RandomizedDelaySec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

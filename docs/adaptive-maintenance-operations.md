@@ -19,6 +19,17 @@ verified rollback always require a separate owner procedure.
 4. Confirm the circuit breaker is closed.
 5. Stage the canary without replacing the active known-good state.
 
+The maintenance state file is `/var/lib/unison/maintenance/state.json`. Treat
+it as authority-bearing operational data. Do not edit it manually or remove it
+to reset a budget. Owner decisions enter
+`/var/lib/unison/maintenance/commands`; Lifecycle archives each command as
+processed or rejected.
+
+The hourly `unison-maintenance.timer` runs a one-shot, recommend-first cycle.
+Network collection is read-only and requires the signed registry at
+`/etc/unison/maintenance-sources.json`. Disabling the timer does not revoke an
+existing grant, so revoke the grant separately when that is your intent.
+
 ## Health failure and rollback
 
 If the post-action health gate fails, stop promotion, restore the checkpoint,

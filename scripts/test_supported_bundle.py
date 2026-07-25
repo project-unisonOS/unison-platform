@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from installer.release_bundle import BundleError, assemble_bundle, verify_bundle
+from installer.release_bundle import REQUIRED_PAYLOAD, BundleError, assemble_bundle, verify_bundle
 from installer.transaction import Installer
 
 GENERATE = ROOT / "scripts/generate_supported_manifest.py"
@@ -91,7 +91,14 @@ def main() -> None:
             assert "image environment" in str(error)
 
         verified = verify_bundle(first, public_key)
-        assert len(verified.index["files"]) == 6
+        assert set(verified.index["files"]) == REQUIRED_PAYLOAD
+        materialized = verified.materialize(root / "materialized-maintenance")
+        assert materialized.joinpath("scripts/unison-maintenance-service.py").stat().st_mode & 0o111
+        registry = json.loads(
+            materialized.joinpath("release/maintenance-sources.json").read_text()
+        )
+        assert registry["signed"]["sources"]
+        assert registry["signature"]
 
         prefix, data = root / "opt", root / "personal-data"
         plan = verified.installation_plan(prefix, data)

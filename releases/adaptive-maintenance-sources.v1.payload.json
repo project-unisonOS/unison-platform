@@ -1,0 +1,45 @@
+{
+  "registry_version": 1,
+  "sources": [
+    {
+      "source_id": "unison-releases",
+      "trust_tier": "authoritative",
+      "url": "https://api.github.com/repos/project-unisonOS/unison-platform/releases",
+      "allowed_hosts": ["api.github.com"],
+      "parser": "json",
+      "maximum_bytes": 1000000,
+      "interval_seconds": 21600,
+      "enabled": true
+    },
+    {
+      "source_id": "ubuntu-security-notices",
+      "trust_tier": "authoritative",
+      "url": "https://ubuntu.com/security/notices.json",
+      "allowed_hosts": ["ubuntu.com"],
+      "parser": "json",
+      "maximum_bytes": 4000000,
+      "interval_seconds": 21600,
+      "enabled": true
+    },
+    {
+      "source_id": "github-advisories",
+      "trust_tier": "authoritative",
+      "url": "https://api.github.com/advisories?per_page=100",
+      "allowed_hosts": ["api.github.com"],
+      "parser": "json",
+      "maximum_bytes": 2000000,
+      "interval_seconds": 21600,
+      "enabled": true
+    },
+    {
+      "source_id": "hacker-news-new-stories",
+      "trust_tier": "discovery-only",
+      "url": "https://hacker-news.firebaseio.com/v0/newstories.json",
+      "allowed_hosts": ["hacker-news.firebaseio.com"],
+      "parser": "json",
+      "maximum_bytes": 1000000,
+      "interval_seconds": 43200,
+      "enabled": true
+    }
+  ]
+}
