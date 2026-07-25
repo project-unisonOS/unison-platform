@@ -26,6 +26,7 @@ on:
       - "maintenance/**"
       - "releases/adaptive-maintenance-*.json"
       - "scripts/test_adaptive_maintenance.py"
+      - "scripts/test_adaptive_maintenance_operations.py"
       - "scripts/unison-maintenance.py"
       - ".github/workflows/supported-runtime.yml"
   pull_request:
@@ -53,6 +54,7 @@ on:
       - "maintenance/**"
       - "releases/adaptive-maintenance-*.json"
       - "scripts/test_adaptive_maintenance.py"
+      - "scripts/test_adaptive_maintenance_operations.py"
       - "scripts/unison-maintenance.py"
       - ".github/workflows/supported-runtime.yml"
 
@@ -79,3 +81,5 @@ jobs:
         run: ./scripts/test_update_transaction.py
       - name: Validate adaptive maintenance analysis boundaries
         run: python3 scripts/test_adaptive_maintenance.py
+      - name: Validate adaptive maintenance operations boundaries
+        run: python3 scripts/test_adaptive_maintenance_operations.py
