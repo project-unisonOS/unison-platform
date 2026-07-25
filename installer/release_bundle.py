@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import base64
 import hashlib
 import json
 import os
@@ -27,7 +28,19 @@ REQUIRED_PAYLOAD = {
     "release/supported-host-requirements.json",
     "release/supported-licenses.json",
     "release/model-profile.json",
+    "release/maintenance-sources.json",
+    "maintenance/__init__.py",
+    "maintenance/contracts.py",
+    "maintenance/execution.py",
+    "maintenance/feeds.py",
+    "maintenance/lifecycle.py",
+    "maintenance/service.py",
+    "maintenance/state.py",
+    "scripts/unison-maintenance-service.py",
+    "systemd/unison-maintenance.service",
+    "systemd/unison-maintenance.timer",
 }
+EXECUTABLE_PAYLOAD = {"scripts/unison-maintenance-service.py"}
 DIGEST_REFERENCE = re.compile(r"^[^\s:@]+(?::[^\s@]+)?@sha256:[0-9a-f]{64}$")
 IMAGE_ALIASES = {
     "UNISON_RENDERER_IMAGE": "experience-renderer",
@@ -200,6 +213,8 @@ class VerifiedBundle:
             target = destination / name
             target.parent.mkdir(parents=True, exist_ok=True)
             target.write_bytes(content)
+            if name in EXECUTABLE_PAYLOAD:
+                target.chmod(0o755)
         return destination
 
     def receipt(self, installed_tree_sha256: str) -> dict:
@@ -258,6 +273,14 @@ def assemble_bundle(
     root: Path,
 ) -> dict:
     manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    registry = json.loads(
+        (root / "releases/adaptive-maintenance-sources.v1.payload.json").read_text(encoding="utf-8")
+    )
+    registry_bytes = canonical_json(registry)
+    registry_envelope = canonical_json({
+        "signed": registry,
+        "signature": base64.b64encode(sign(registry_bytes.rstrip(b"\n"), private_key)).decode(),
+    })
     payload_paths = {
         MANIFEST_NAME: manifest_path,
         "compose/compose.supported.yaml": root / "compose/compose.supported.yaml",
@@ -265,8 +288,21 @@ def assemble_bundle(
         "release/supported-host-requirements.json": root / "releases/supported-host-requirements.json",
         "release/supported-licenses.json": root / "releases/supported-licenses.json",
         "release/model-profile.json": root / "model-packs/alpha/default.json",
+        "maintenance/__init__.py": root / "maintenance/__init__.py",
+        "maintenance/contracts.py": root / "maintenance/contracts.py",
+        "maintenance/execution.py": root / "maintenance/execution.py",
+        "maintenance/feeds.py": root / "maintenance/feeds.py",
+        "maintenance/lifecycle.py": root / "maintenance/lifecycle.py",
+        "maintenance/service.py": root / "maintenance/service.py",
+        "maintenance/state.py": root / "maintenance/state.py",
+        "scripts/unison-maintenance-service.py": root / "scripts/unison-maintenance-service.py",
+        "systemd/unison-maintenance.service": root / "systemd/unison-maintenance.service",
+        "systemd/unison-maintenance.timer": root / "systemd/unison-maintenance.timer",
     }
-    payload = {name: path.read_bytes() for name, path in payload_paths.items()}
+    payload = {
+        **{name: path.read_bytes() for name, path in payload_paths.items()},
+        "release/maintenance-sources.json": registry_envelope,
+    }
     _validate_manifest(manifest, payload)
     index = {
         "schema_version": BUNDLE_SCHEMA,

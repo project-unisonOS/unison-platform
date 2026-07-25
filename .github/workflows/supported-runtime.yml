@@ -27,6 +27,10 @@ on:
       - "releases/adaptive-maintenance-*.json"
       - "scripts/test_adaptive_maintenance.py"
       - "scripts/test_adaptive_maintenance_operations.py"
+      - "scripts/test_adaptive_maintenance_integration.py"
+      - "scripts/unison-maintenance-service.py"
+      - "scripts/sign-maintenance-source-registry.py"
+      - "systemd/unison-maintenance.*"
       - "scripts/unison-maintenance.py"
       - ".github/workflows/supported-runtime.yml"
   pull_request:
@@ -55,6 +59,10 @@ on:
       - "releases/adaptive-maintenance-*.json"
       - "scripts/test_adaptive_maintenance.py"
       - "scripts/test_adaptive_maintenance_operations.py"
+      - "scripts/test_adaptive_maintenance_integration.py"
+      - "scripts/unison-maintenance-service.py"
+      - "scripts/sign-maintenance-source-registry.py"
+      - "systemd/unison-maintenance.*"
       - "scripts/unison-maintenance.py"
       - ".github/workflows/supported-runtime.yml"
 
@@ -83,3 +91,5 @@ jobs:
         run: python3 scripts/test_adaptive_maintenance.py
       - name: Validate adaptive maintenance operations boundaries
         run: python3 scripts/test_adaptive_maintenance_operations.py
+      - name: Validate adaptive maintenance Lifecycle integration
+        run: python3 scripts/test_adaptive_maintenance_integration.py
