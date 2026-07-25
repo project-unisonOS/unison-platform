@@ -78,4 +78,4 @@ jobs:
       - name: Simulate verified update activation and rollback
         run: ./scripts/test_update_transaction.py
       - name: Validate adaptive maintenance analysis boundaries
-        run: ./scripts/test_adaptive_maintenance.py
+        run: python3 scripts/test_adaptive_maintenance.py
