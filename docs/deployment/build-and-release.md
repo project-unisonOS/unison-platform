@@ -76,6 +76,14 @@ The supported Compose profile requires `UNISON_MODEL_REGISTRY_DIR` and
 `UNISON_REQUIRE_GOVERNED_REGISTRY=true` and refuses partial, forged, unknown,
 or digest-mismatched registry state.
 
+The profile also requires `UNISON_MODEL_LIFECYCLE_DIR` as a writable,
+appliance-persistent directory. The signed bundle includes
+`release/model-lifecycle-policy.json`, which pins the journal and rollback
+artifact paths used by Compose. Inference atomically restores the journal at
+startup and writes content-free rollback artifacts for the retained release
+model when a canary fails its health gate. The runtime never receives a release
+signing key.
+
 Render the supported runtime as an override of the base topology:
 
 ```bash

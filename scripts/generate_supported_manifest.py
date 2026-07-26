@@ -70,6 +70,7 @@ def main() -> None:
     created = datetime.fromtimestamp(epoch, timezone.utc).isoformat().replace("+00:00", "Z")
     compose = ROOT / "compose/compose.supported.yaml"
     models = ROOT / "model-packs/alpha/default.json"
+    model_lifecycle_policy = ROOT / "releases/model-lifecycle-policy.v1.json"
     requirements = ROOT / "releases/supported-host-requirements.json"
     licenses = ROOT / "releases/supported-licenses.json"
     commit = subprocess.check_output(  # nosec B603
@@ -102,6 +103,8 @@ def main() -> None:
             "backup": 1,
             "model_profile": load_json(models)["profile"],
             "model_profile_sha256": sha256(models),
+            "model_lifecycle_policy": load_json(model_lifecycle_policy)["schema_version"],
+            "model_lifecycle_policy_sha256": sha256(model_lifecycle_policy),
         },
         "licenses": load_json(licenses),
     }

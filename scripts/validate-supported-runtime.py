@@ -59,6 +59,10 @@ def main() -> None:
         "UNISON_MODEL_REGISTRY_INVENTORY_FILE: /etc/unison/model-registry/inventory.json",
         "${UNISON_MODEL_REGISTRY_DIR:?signed model registry directory required}:/etc/unison/model-registry:ro",
         "${UNISON_MODEL_ARTIFACTS_DIR:?verified model artifact directory required}:/var/lib/unison/models:ro",
+        'UNISON_REQUIRE_PERSISTENT_MODEL_LIFECYCLE: "true"',
+        "UNISON_MODEL_LIFECYCLE_STATE_FILE: /var/lib/unison/model-lifecycle/state.json",
+        "UNISON_MODEL_ROLLBACK_ARTIFACTS_DIR: /var/lib/unison/model-lifecycle/rollback-artifacts",
+        "${UNISON_MODEL_LIFECYCLE_DIR:?persistent model lifecycle directory required}:/var/lib/unison/model-lifecycle",
     )
     missing = [value for value in registry_contract if value not in source]
     if missing:

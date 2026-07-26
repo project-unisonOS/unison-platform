@@ -35,6 +35,10 @@ def main() -> None:
         assert one["runtime"]["service_count"] == 13
         assert set(one["runtime"]["images"]) == set(one["licenses"]["images"])
         assert one["release"]["created_at"] == "2026-07-23T00:00:00Z"
+        assert one["versions"]["model_lifecycle_policy"] == (
+            "unison.platform.model-lifecycle-policy.v1"
+        )
+        assert len(one["versions"]["model_lifecycle_policy_sha256"]) == 64
         assert str(ROOT) not in first.read_text()
 
         result = subprocess.run(
