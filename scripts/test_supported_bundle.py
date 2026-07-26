@@ -99,6 +99,11 @@ def main() -> None:
         )
         assert registry["signed"]["sources"]
         assert registry["signature"]
+        lifecycle_policy = json.loads(
+            materialized.joinpath("release/model-lifecycle-policy.json").read_text()
+        )
+        assert lifecycle_policy["person_content_allowed"] is False
+        assert lifecycle_policy["state_file"] == "/var/lib/unison/model-lifecycle/state.json"
 
         prefix, data = root / "opt", root / "personal-data"
         plan = verified.installation_plan(prefix, data)

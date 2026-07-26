@@ -22,6 +22,8 @@ def fail(message: str) -> None:
 
 def main() -> None:
     source = COMPOSE.read_text(encoding="utf-8")
+    if re.search(r"^include:", source, re.MULTILINE):
+        fail("supported profile must be a Compose override, not a conflicting include")
     if "latest" in source or "UNISON_IMAGE_TAG" in source:
         fail("supported profile contains a mutable image selector")
     services = set(re.findall(r"^  ([a-z0-9-]+):$", source, re.MULTILINE))
@@ -50,6 +52,21 @@ def main() -> None:
             fail(f"{internal} does not reset developer host ports")
     if source.count('"127.0.0.1:') != 2:
         fail("supported profile must expose exactly two loopback surfaces")
+    registry_contract = (
+        'UNISON_REQUIRE_GOVERNED_REGISTRY: "true"',
+        "UNISON_MODEL_REGISTRY_MANIFESTS_DIR: /etc/unison/model-registry/manifests",
+        "UNISON_MODEL_REGISTRY_TRUSTED_KEYS_DIR: /etc/unison/model-registry/keys",
+        "UNISON_MODEL_REGISTRY_INVENTORY_FILE: /etc/unison/model-registry/inventory.json",
+        "${UNISON_MODEL_REGISTRY_DIR:?signed model registry directory required}:/etc/unison/model-registry:ro",
+        "${UNISON_MODEL_ARTIFACTS_DIR:?verified model artifact directory required}:/var/lib/unison/models:ro",
+        'UNISON_REQUIRE_PERSISTENT_MODEL_LIFECYCLE: "true"',
+        "UNISON_MODEL_LIFECYCLE_STATE_FILE: /var/lib/unison/model-lifecycle/state.json",
+        "UNISON_MODEL_ROLLBACK_ARTIFACTS_DIR: /var/lib/unison/model-lifecycle/rollback-artifacts",
+        "${UNISON_MODEL_LIFECYCLE_DIR:?persistent model lifecycle directory required}:/var/lib/unison/model-lifecycle",
+    )
+    missing = [value for value in registry_contract if value not in source]
+    if missing:
+        fail(f"supported inference registry boundary drift: {missing}")
     print("[PASS] Supported runtime has 13 digest-required services and two loopback-only surfaces.")
 
 

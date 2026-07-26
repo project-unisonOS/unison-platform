@@ -65,3 +65,35 @@ Preview signing trust is intentionally separate from a future production
 release key. A supported release must also satisfy the tracked hardware
 validation gates before the support record can change from
 `unsupported-preview`.
+
+## Supported model-registry inputs
+
+The supported Compose profile requires `UNISON_MODEL_REGISTRY_DIR` and
+`UNISON_MODEL_ARTIFACTS_DIR`. The registry directory is mounted read-only at
+`/etc/unison/model-registry` and contains `manifests/`, `keys/`, and
+`inventory.json`; model artifacts are separately mounted read-only at
+`/var/lib/unison/models`. Inference starts with
+`UNISON_REQUIRE_GOVERNED_REGISTRY=true` and refuses partial, forged, unknown,
+or digest-mismatched registry state.
+
+The profile also requires `UNISON_MODEL_LIFECYCLE_DIR` as a writable,
+appliance-persistent directory. The signed bundle includes
+`release/model-lifecycle-policy.json`, which pins the journal and rollback
+artifact paths used by Compose. Inference atomically restores the journal at
+startup and writes content-free rollback artifacts for the retained release
+model when a canary fails its health gate. The runtime never receives a release
+signing key.
+
+Render the supported runtime as an override of the base topology:
+
+```bash
+docker compose \
+  -f compose/compose.yaml \
+  -f compose/compose.supported.yaml \
+  config
+```
+
+Release assembly must populate these inputs from release-controlled Ed25519
+signing and verified artifact staging. Preview tooling must not synthesize a
+production key, mark a model supported, or fill the currently empty supported
+model/hardware matrix.

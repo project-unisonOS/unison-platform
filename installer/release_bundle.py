@@ -28,6 +28,7 @@ REQUIRED_PAYLOAD = {
     "release/supported-host-requirements.json",
     "release/supported-licenses.json",
     "release/model-profile.json",
+    "release/model-lifecycle-policy.json",
     "release/maintenance-sources.json",
     "maintenance/__init__.py",
     "maintenance/contracts.py",
@@ -174,6 +175,15 @@ def _validate_manifest(manifest: dict, payload: dict[str, bytes]) -> None:
         raise BundleError("model profile does not match the release manifest")
     if model.get("profile") != manifest.get("versions", {}).get("model_profile"):
         raise BundleError("model profile identity does not match the release manifest")
+    lifecycle = json.loads(payload["release/model-lifecycle-policy.json"])
+    if lifecycle.get("schema_version") != "unison.platform.model-lifecycle-policy.v1":
+        raise BundleError("unsupported model lifecycle policy")
+    if lifecycle.get("person_content_allowed") is not False:
+        raise BundleError("model lifecycle policy must prohibit person content")
+    if sha256_bytes(payload["release/model-lifecycle-policy.json"]) != manifest.get(
+        "versions", {}
+    ).get("model_lifecycle_policy_sha256"):
+        raise BundleError("model lifecycle policy does not match the release manifest")
 
 
 @dataclass(frozen=True)
@@ -288,6 +298,7 @@ def assemble_bundle(
         "release/supported-host-requirements.json": root / "releases/supported-host-requirements.json",
         "release/supported-licenses.json": root / "releases/supported-licenses.json",
         "release/model-profile.json": root / "model-packs/alpha/default.json",
+        "release/model-lifecycle-policy.json": root / "releases/model-lifecycle-policy.v1.json",
         "maintenance/__init__.py": root / "maintenance/__init__.py",
         "maintenance/contracts.py": root / "maintenance/contracts.py",
         "maintenance/execution.py": root / "maintenance/execution.py",
