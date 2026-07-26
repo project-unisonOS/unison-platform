@@ -2,8 +2,8 @@
 #
 # Release assembly must substitute every required variable with a registry
 # digest. Docker Compose rejects the profile when any value is absent.
-include:
-  - compose.yaml
+# Render with:
+# docker compose -f compose.yaml -f compose.supported.yaml config
 
 services:
   redis:
@@ -44,6 +44,14 @@ services:
   inference:
     image: ${UNISON_INFERENCE_IMAGE:?digest-pinned inference image required}
     ports: !reset []
+    environment:
+      UNISON_REQUIRE_GOVERNED_REGISTRY: "true"
+      UNISON_MODEL_REGISTRY_MANIFESTS_DIR: /etc/unison/model-registry/manifests
+      UNISON_MODEL_REGISTRY_TRUSTED_KEYS_DIR: /etc/unison/model-registry/keys
+      UNISON_MODEL_REGISTRY_INVENTORY_FILE: /etc/unison/model-registry/inventory.json
+    volumes:
+      - ${UNISON_MODEL_REGISTRY_DIR:?signed model registry directory required}:/etc/unison/model-registry:ro
+      - ${UNISON_MODEL_ARTIFACTS_DIR:?verified model artifact directory required}:/var/lib/unison/models:ro
   storage:
     image: ${UNISON_STORAGE_IMAGE:?digest-pinned storage image required}
     ports: !reset []
