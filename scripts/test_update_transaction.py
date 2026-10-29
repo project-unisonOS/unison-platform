@@ -7,6 +7,7 @@ import json
 import subprocess
 import sys
 import tempfile
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -18,6 +19,11 @@ from installer.update_transaction import UpdateError, UpdateTransaction
 
 GENERATE = ROOT / "scripts/generate_supported_manifest.py"
 EXAMPLE_IMAGES = ROOT / "releases/supported-images.example.env"
+FIXTURE_NOW = datetime.now(timezone.utc)
+
+
+def fixture_time(days: int) -> str:
+    return (FIXTURE_NOW + timedelta(days=days)).isoformat().replace("+00:00", "Z")
 
 
 def image_environment(path: Path) -> None:
@@ -49,7 +55,7 @@ def update_root(private_key: Path, path: Path) -> None:
         "signed": {
             "_type": "root",
             "version": 1,
-            "expires": "2027-07-24T00:00:00Z",
+            "expires": fixture_time(30),
             "keys": {
                 "update-k0": {
                     "keytype": "ed25519",
@@ -64,13 +70,13 @@ def update_root(private_key: Path, path: Path) -> None:
 
 
 def authorization(
-    bundle: Path, version: str, target_version: int, private_key: Path
+    bundle: Path, version: str, target_version: int, private_key: Path, *, expired: bool = False
 ) -> dict:
     signed = {
         "_type": "targets",
         "version": target_version,
         "channel": "stable",
-        "expires": "2026-08-24T00:00:00Z",
+        "expires": fixture_time(-1 if expired else 1),
         "target": {
             "path": bundle.name,
             "version": target_version,
@@ -96,7 +102,7 @@ def authorization(
     }
     return {
         "schema_version": "unison.updates.verified-target.v1",
-        "verified_at": "2026-07-24T00:00:00Z",
+        "verified_at": fixture_time(0),
         "trusted_root_version": 1,
         "channel": "stable",
         "channel_metadata_version": target_version,
@@ -298,13 +304,19 @@ def main() -> None:
         )
         expired_root = fixtures / "expired-update-root.json"
         expired = json.loads(trusted_update_root.read_text())
-        expired["signed"]["expires"] = "2026-07-23T00:00:00Z"
+        expired["signed"]["expires"] = fixture_time(-1)
         expired_root.write_text(json.dumps(expired) + "\n")
         expect_failure(
             lambda: engine(
                 prefix, data, public_key, expired_root, lambda *_: True
             ).apply(v2, authorization(v2, "v0.2.0", 2, private_key)),
             "trusted update root is expired",
+        )
+        expect_failure(
+            lambda: engine(
+                prefix, data, public_key, trusted_update_root, lambda *_: True
+            ).apply(v2, authorization(v2, "v0.2.0", 2, private_key, expired=True)),
+            "update authorization metadata is expired",
         )
 
     print(
